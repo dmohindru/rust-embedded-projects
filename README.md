@@ -2,8 +2,8 @@
 
 This repository documents my hands-on learning path in **Embedded Rust** using two platforms:
 
-- **BBC micro:bit v2** — async firmware built with the [Embassy](https://embassy.dev) framework.
-- **STM32F3 Discovery** — projects to follow later.
+- [**BBC micro:bit v2**](./microbit-v2/) — async firmware built with the [Embassy](https://embassy.dev) framework.
+- [**STM32F3 Discovery**](./stm32f3discovery/) — projects to follow later.
 
 Each board folder contains self-contained projects developed with a **TDD (Test-Driven Development)** approach: all logic that can run on the host is unit-tested, and hardware access is isolated in thin async tasks.
 
