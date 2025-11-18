@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "drivers/*",
+    # "crates/*",
+    # "projects/*",
+    # add more member globs as you create them
+]
+
+# Optional: workspace-wide dev-deps (for tests using mocks)
+[workspace.dev-dependencies]
+embedded-hal-mock = "0.13" # example; pin to a version you prefer
