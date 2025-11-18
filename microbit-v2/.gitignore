@@ -1,0 +1,64 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE & Editor files
+# .vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Debugging
+debug.log
+.gdb_history
+.lldb_history
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS-specific
+Thumbs.db
+.DS_Store
+
+# Probe-run / embedded debugging
+*.probe-run.log
+openocd.log
+
+# Test coverage
+tarpaulin-report.html
+cobertura.xml
+
+# Flamegraph / profiling
+flamegraph.svg
+perf.data
+perf.data.old
+
+# Build outputs (if building for multiple targets)
+.cargo/
+!.cargo/config.toml
+
+# Python / virtualenv (if you have Python scripts)
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Temporary files
+*.tmp
+*.bak
+
+# CI/CD temporary files
+.github/workflows/*.log
