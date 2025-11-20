@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "drivers/*",
+    "drivers/*", "projects/project00_hello_world",
     # "crates/*",
     # "projects/*",
     # add more member globs as you create them
