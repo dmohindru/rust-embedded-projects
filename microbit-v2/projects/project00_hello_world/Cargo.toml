@@ -5,61 +5,42 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-embassy-futures = { version = "0.1.0" }
-embassy-sync = { version = "0.6.0", features = ["defmt"] }
+# Core Embassy async runtime and executor
 embassy-executor = { version = "0.6.0", features = [
     "task-arena-size-32768",
     "arch-cortex-m",
     "executor-thread",
-    "executor-interrupt",
     "defmt",
     "integrated-timers",
 ] }
+
+# Embassy time management and timers
 embassy-time = { version = "0.3.2", features = [
     "defmt",
     "defmt-timestamp-uptime",
 ] }
+
+# Embassy support for nRF52833 (micro:bit v2)
 embassy-nrf = { version = "0.2.0", features = [
     "defmt",
-    "nrf52840",
+    "nrf52833",
     "time-driver-rtc1",
-    "gpiote",
-    "unstable-pac",
     "time",
 ] }
-embassy-net = { version = "0.4.0", features = [
-    "defmt",
-    "tcp",
-    "dhcpv4",
-    "medium-ethernet",
-] }
-embassy-usb = { version = "0.3.0", features = ["defmt"] }
-embedded-io = { version = "0.6.0", features = ["defmt-03"] }
-embedded-io-async = { version = "0.6.1", features = ["defmt-03"] }
-embassy-net-esp-hosted = { version = "0.1.0", features = ["defmt"] }
-embassy-net-enc28j60 = { version = "0.1.0", features = ["defmt"] }
 
+# Logging framework
 defmt = "0.3"
 defmt-rtt = "0.4"
+
+# ARM Cortex-M support
 cortex-m = { version = "0.7.6", features = [
     "inline-asm",
     "critical-section-single-core",
 ] }
 cortex-m-rt = "0.7.0"
+
+# Panic handler with defmt logging
 panic-probe = { version = "0.3", features = ["print-defmt"] }
-
-embedded-storage = "0.3.1"
-embedded-hal = { version = "1.0" }
-embedded-hal-async = { version = "1.0" }
-embedded-hal-bus = { version = "0.1", features = ["async"] }
-
-fixed = "1.10.0"
-usbd-hid = "0.8.1"
-microfft = "0.5.0"
-static_cell = { version = "2" }
-rand = { version = "0.8.4", default-features = false }
-serde = { version = "1.0.136", default-features = false }
-num-integer = { version = "0.1.45", default-features = false }
 
 [profile.release]
 debug = 2

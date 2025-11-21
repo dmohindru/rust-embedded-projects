@@ -1,6 +1,6 @@
 ## Introduction
 
-A basic hello world program for getting started with embassy framework. This program with log two different hello world strings at different intervals demonstrating embassy's async runtime.
+A basic hello world program for getting started with embassy framework. This program will log two different hello world strings at different intervals demonstrating embassy's async runtime.
 
 ## Dependencies Overview
 
@@ -214,7 +214,7 @@ Common troubleshooting:
 
 - .vscode/tasks.json (Build tasks)
 - .vscode/launch.json (Debugger launch configuration)
-✓ Example main.rs with Embassy async runtime (completed)
+  ✓ Example main.rs with Embassy async runtime (completed)
 
 ## Example main.rs — Embassy Async Runtime
 
@@ -236,6 +236,7 @@ The `src/main.rs` file demonstrates the Embassy async runtime with two concurren
 - **panic_probe** — Captures panics and sends them via RTT.
 
 When you run this program, you should see:
+
 - "=== Embassy Async Runtime Demo ===" (once at startup)
 - "Fast task: Hello from Embassy! (500ms interval)" (every 500ms)
 - "Slow task: Hello from microbit v2! (2s interval)" (every 2 seconds)
@@ -255,6 +256,7 @@ cargo build --target thumbv7em-none-eabihf --release
 ```
 
 The binary is produced at:
+
 - Debug: `target/thumbv7em-none-eabihf/debug/project00_hello_world`
 - Release: `target/thumbv7em-none-eabihf/release/project00_hello_world`
 
