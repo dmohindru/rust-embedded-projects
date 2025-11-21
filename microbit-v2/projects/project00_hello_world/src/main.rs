@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-//https://github.com/rust-lang/vscode-rust/issues/729
 
 use defmt::info;
 use embassy_executor::Spawner;

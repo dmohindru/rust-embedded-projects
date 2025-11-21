@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Microbit Debug",
+      "type": "probe-rs-debug",
+      "request": "launch",
+      "preLaunchTask": "Build Debug",
+      "flashingConfig": {
+        "flashingEnabled": true
+      },
+      "chip": "nRF52833_xxAA",
+      "coreConfigs": [
+        {
+          "programBinary": "${workspaceFolder}/../../target/thumbv7em-none-eabihf/debug/${workspaceFolderBasename}"
+        }
+      ]
+    }
+  ]
+}
