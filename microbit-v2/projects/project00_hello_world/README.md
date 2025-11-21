@@ -214,4 +214,72 @@ Common troubleshooting:
 
 - .vscode/tasks.json (Build tasks)
 - .vscode/launch.json (Debugger launch configuration)
-- Example main.rs with Embassy async runtime
+✓ Example main.rs with Embassy async runtime (completed)
+
+## Example main.rs — Embassy Async Runtime
+
+The `src/main.rs` file demonstrates the Embassy async runtime with two concurrent tasks:
+
+### Architecture
+
+- **#![no_std] #![no_main]** — Bare-metal Rust: no standard library, we provide the entry point.
+- **task_fast()** — Async task logging every 500ms using `Timer::after()`.
+- **task_slow()** — Async task logging every 2 seconds, also async.
+- **main()** — Marked with `#[embassy_executor::main]`, initializes the executor and spawns both tasks. The executor keeps them running concurrently.
+
+### Key components
+
+- **embassy_executor::Spawner** — Used to spawn tasks onto the executor.
+- **embassy_nrf::init()** — Initializes nRF52833 peripherals (for this template, we use default config).
+- **embassy_time::Timer** — Provides async-friendly delays (no blocking).
+- **defmt::info!()** — Logs messages via defmt (efficient, zero-allocation logging).
+- **panic_probe** — Captures panics and sends them via RTT.
+
+When you run this program, you should see:
+- "=== Embassy Async Runtime Demo ===" (once at startup)
+- "Fast task: Hello from Embassy! (500ms interval)" (every 500ms)
+- "Slow task: Hello from microbit v2! (2s interval)" (every 2 seconds)
+
+Both tasks run concurrently thanks to Embassy's executor; they don't block each other.
+
+## Building and flashing manually
+
+If you prefer not to use `cargo run`, you can build and flash in two steps:
+
+### Step 1: Build
+
+```bash
+cargo build --target thumbv7em-none-eabihf
+# or for release (optimized for size):
+cargo build --target thumbv7em-none-eabihf --release
+```
+
+The binary is produced at:
+- Debug: `target/thumbv7em-none-eabihf/debug/project00_hello_world`
+- Release: `target/thumbv7em-none-eabihf/release/project00_hello_world`
+
+### Step 2: Flash and run with probe-rs
+
+```bash
+probe-rs run --probe 0d28:0204 --chip nRF52833_xxAA target/thumbv7em-none-eabihf/debug/project00_hello_world
+```
+
+Replace `0d28:0204` with your probe's VID:PID if different. Omit `--probe` if you have a single probe connected:
+
+```bash
+probe-rs run --chip nRF52833_xxAA target/thumbv7em-none-eabihf/debug/project00_hello_world
+```
+
+### Viewing logs
+
+The program outputs logs via defmt over RTT (Real-Time Transport). To see them:
+
+1. **During `cargo run` or `probe-rs run`**: Most tools automatically display logs in the terminal.
+2. **Manual inspection**: Use a defmt viewer:
+
+```bash
+# Install defmt CLI if not present
+cargo install defmt-print
+# View logs from a running program
+defmt-print /dev/ttyACM0  # Linux path; adjust for your system
+```
