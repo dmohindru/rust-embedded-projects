@@ -1,6 +1,6 @@
 ## Project specifically to demo working with LED matrix
 
-### Project 1
+### [Project 1](./led_matrix_project1/)
 
 **Move horizontal line left or right**
 
