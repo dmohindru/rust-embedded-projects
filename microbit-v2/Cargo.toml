@@ -46,6 +46,5 @@ cortex-m-rt = "0.7.0"
 
 # Panic handler with defmt logging
 panic-probe = { version = "0.3", features = ["print-defmt"] }
-
 [profile.release]
 debug = 2
