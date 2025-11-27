@@ -2,13 +2,14 @@
 members = [
     "drivers/*",
     "projects/project00_hello_world",
-    "projects/project01_led_marix_projects/led_matrix_project1",
+    # "projects/project01_led_marix_projects/led_matrix_project1",
 
 
     # "crates/*",
     # "projects/*",
     # add more member globs as you create them
 ]
+resolver = "2"
 
 # Optional: workspace-wide dev-deps (for tests using mocks)
 [workspace.dev-dependencies]
