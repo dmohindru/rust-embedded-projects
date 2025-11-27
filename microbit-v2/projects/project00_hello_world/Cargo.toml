@@ -9,6 +9,7 @@ license = "MIT OR Apache-2.0"
 embassy-executor = { workspace = true }
 
 embassy-time = { workspace = true }
+# embassy-time = "0.3.2"
 
 # Embassy time management and timers
 # Embassy support for nRF52833 (micro:bit v2)
