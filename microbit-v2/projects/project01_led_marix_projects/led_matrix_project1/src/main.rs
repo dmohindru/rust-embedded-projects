@@ -30,15 +30,12 @@ async fn button_task(
 ) {
     loop {
         button.wait_for_low().await;
-        // sender.send(value).await;
 
         Timer::after_millis(20).await;
 
         if button.is_high() {
             sender.send(value).await;
         }
-
-        // button.wait_for_high().await;
     }
 }
 
@@ -49,9 +46,7 @@ async fn button_task(
 async fn button_receiver(receiver: Receiver<'static, ThreadModeRawMutex, Direction, 2>) {
     loop {
         let button_pressed = receiver.receive().await;
-
         info!("Button pressed {}", button_pressed);
-        Timer::after(Duration::from_secs(2)).await;
     }
 }
 
