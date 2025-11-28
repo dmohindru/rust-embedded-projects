@@ -11,6 +11,7 @@ use embassy_sync::{
 use embassy_time::{Duration, Timer};
 use {defmt_rtt as _, panic_probe as _};
 
+#[derive(defmt::Format, Clone, Copy)]
 enum Direction {
     Left,
     Right,
@@ -18,20 +19,18 @@ enum Direction {
 
 static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
 
-// Button task that would detect button press and send a message on a channel
-// Pool 2 required for button A, button B
-// Params
-// 1. Button pin
-// 2. Channel sender
-// 3. Value to send
-#[embassy_executor::task]
+//--------------------
+// Button Task
+//--------------------
+#[embassy_executor::task(pool_size = 2)]
 async fn button_task(
     sender: Sender<'static, ThreadModeRawMutex, Direction, 2>,
-    button: Input<'static>,
+    mut button: Input<'static>,
     value: Direction,
 ) {
     loop {
-        button.wait_for_high().await;
+        button.wait_for_low().await;
+        // sender.send(value).await;
 
         Timer::after_millis(20).await;
 
@@ -39,19 +38,19 @@ async fn button_task(
             sender.send(value).await;
         }
 
-        button.wait_for_low().await;
+        // button.wait_for_high().await;
     }
 }
 
-// Receiver task to receive button press and do its business logic
-// Params
-// 1. Channel Receiver
+//--------------------
+// Receiver Task
+//--------------------
 #[embassy_executor::task]
 async fn button_receiver(receiver: Receiver<'static, ThreadModeRawMutex, Direction, 2>) {
     loop {
         let button_pressed = receiver.receive().await;
 
-        info!("Slow task: Hello from microbit v2! (2s interval)");
+        info!("Button pressed {}", button_pressed);
         Timer::after(Duration::from_secs(2)).await;
     }
 }
@@ -61,11 +60,19 @@ async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(Default::default());
     let btn_a = Input::new(p.P0_14, Pull::Up);
     let btn_b = Input::new(p.P0_23, Pull::Up);
-    let sender = CHANNEL.sender();
-    let receiver = CHANNEL.recv();
+    let sender_a = CHANNEL.sender();
+    let sender_b = CHANNEL.sender();
+    let receiver = CHANNEL.receiver();
 
-    spawner.spawn(button_task(sender, btn_a, Direction::Left));
-    spawner.spawn(button_task(sender, btn_b, Direction::Left));
+    spawner
+        .spawn(button_task(sender_a, btn_a, Direction::Left))
+        .expect("Failed to button A task");
+    spawner
+        .spawn(button_task(sender_b, btn_b, Direction::Right))
+        .expect("Failed to spawn button B task");
+    spawner
+        .spawn(button_receiver(receiver))
+        .expect("Failed to spawn button receiver task");
 }
 
 /*

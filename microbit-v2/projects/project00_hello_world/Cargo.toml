@@ -5,25 +5,17 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-# Core Embassy async runtime and executor
 embassy-executor = { workspace = true }
 
 embassy-time = { workspace = true }
-# embassy-time = "0.3.2"
-
-# Embassy time management and timers
-# Embassy support for nRF52833 (micro:bit v2)
 embassy-nrf = { workspace = true }
 
-# Logging framework
 defmt = { workspace = true }
 defmt-rtt = { workspace = true }
 
-# ARM Cortex-M support
 cortex-m = { workspace = true }
 cortex-m-rt = { workspace = true }
 
-# Panic handler with defmt logging
 panic-probe = { workspace = true }
 
 [profile.release]
