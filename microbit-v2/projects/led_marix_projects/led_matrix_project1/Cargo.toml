@@ -19,6 +19,7 @@ cortex-m-rt = { workspace = true }
 embassy-sync = { workspace = true }
 
 panic-probe = { workspace = true }
+heapless = { workspace = true }
 
 
 [profile.release]

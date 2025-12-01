@@ -14,3 +14,7 @@ how to create two dimensional array uint8
 vectors in embedded world
 
 ### Solution approach
+
+### Links
+
+https://hackaday.io/page/21907-test-driven-embedded-rust-development-tutorial

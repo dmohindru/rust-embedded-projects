@@ -1,1 +1,0 @@
-lsm303agr mag

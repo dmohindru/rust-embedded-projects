@@ -1,6 +1,9 @@
 #![no_std]
 #![no_main]
 
+mod frame;
+
+use crate::frame::{Direction, Frame, FrameData};
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_nrf::gpio::{AnyPin, Input, Output, Pull};
@@ -11,13 +14,15 @@ use embassy_sync::{
 use embassy_time::{Duration, Timer};
 use {defmt_rtt as _, panic_probe as _};
 
-#[derive(defmt::Format, Clone, Copy)]
-enum Direction {
-    Left,
-    Right,
-}
-
 static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
+
+// const COL1: Frame = [0x10, 0x10, 0x10, 0x10, 0x10];
+// const COL2: Frame = [0x08, 0x08, 0x08, 0x08, 0x08];
+// const COL3: Frame = [0x04, 0x04, 0x04, 0x04, 0x04];
+// const COL4: Frame = [0x02, 0x02, 0x02, 0x02, 0x02];
+// const COL5: Frame = [0x01, 0x01, 0x01, 0x01, 0x01];
+
+// static FRAMES: &[Frame] = &[COL1, COL2, COL3, COL4, COL5];
 
 //--------------------
 // Button Task
