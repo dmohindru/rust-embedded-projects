@@ -20,6 +20,7 @@ embassy-sync = { workspace = true }
 
 panic-probe = { workspace = true }
 heapless = { workspace = true }
+frame-data = { path = "../frame_data" }
 
 
 [profile.release]

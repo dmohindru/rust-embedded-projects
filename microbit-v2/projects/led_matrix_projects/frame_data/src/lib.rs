@@ -1,6 +1,6 @@
 #![no_std]
 
-#[cfg(test)]
+#[cfg(feature = "std")]
 extern crate std;
 
 pub mod frame;

@@ -1,0 +1,18 @@
+[package]
+name = "frame-data"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+
+[features]
+# default build is no_std
+default = []
+
+# enable std explicitly (e.g. during cargo test)
+std = []
+
+[dependencies]
+heapless = { workspace = true }
+defmt = { workspace = true }
+
+[dev-dependencies]

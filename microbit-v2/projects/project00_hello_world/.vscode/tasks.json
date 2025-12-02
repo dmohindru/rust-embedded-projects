@@ -13,7 +13,7 @@
     {
       "label": "Build Debug",
       "type": "shell",
-      "command": "cargo build",
+      "command": "cargo build --target thumbv7em-none-eabihf",
       "group": {
         "kind": "build",
         "isDefault": true
@@ -27,7 +27,7 @@
     {
       "label": "Build Release",
       "type": "shell",
-      "command": "cargo build --release",
+      "command": "cargo build --target thumbv7em-none-eabihf --release",
       "group": "build",
       "problemMatcher": ["$rustc"],
       "presentation": {
@@ -38,7 +38,7 @@
     {
       "label": "Flash Debug",
       "type": "shell",
-      "command": "cargo run",
+      "command": "cargo run --target thumbv7em-none-eabihf",
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -48,7 +48,7 @@
     {
       "label": "Flash Release",
       "type": "shell",
-      "command": "cargo run --release",
+      "command": "cargo run --target thumbv7em-none-eabihf --release",
       "group": "test",
       "presentation": {
         "reveal": "always",
