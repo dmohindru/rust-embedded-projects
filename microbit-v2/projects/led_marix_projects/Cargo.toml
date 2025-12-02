@@ -1,2 +1,0 @@
-[workspace]
-members = ["frame-data", "frame_data", "led_matrix_project1"]

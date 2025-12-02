@@ -1,7 +1,0 @@
-{
-  "folders": [
-    { "path": "../../.." }, // workspace root
-    { "path": "." } // this folder (your focus)
-  ],
-  "settings": {}
-}
