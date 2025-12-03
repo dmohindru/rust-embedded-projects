@@ -14,5 +14,18 @@ std = []
 [dependencies]
 heapless = { workspace = true }
 defmt = { workspace = true }
+embassy-nrf = { workspace = true }
+async-trait = { workspace = true }
+embassy-time = { workspace = true }
 
+
+# conditional dependencies for "std" (used in tests or PC)
+# [dependencies.embedded-hal]
+# version = "1.0.0-alpha.10"
+# optional = true
+
+# dev dependencies for testing with mocks
 [dev-dependencies]
+embedded-hal = "1.0.0-alpha.10"
+embedded-hal-mock = "0.10"
+async-trait = "0.1"

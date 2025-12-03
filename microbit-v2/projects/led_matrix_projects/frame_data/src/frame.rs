@@ -1,6 +1,7 @@
 use defmt::Format;
 use heapless::Vec;
 
+// TODO: Make this type generic for any size of led matrix
 pub type Frame = [u8; 5];
 
 #[derive(Format, Clone, Copy)]
@@ -53,7 +54,6 @@ mod tests {
     // Forces std mode for the module
     extern crate std;
     use super::*;
-    use std::dbg;
     const F1: Frame = [1, 1, 1, 1, 1];
     const F2: Frame = [2, 2, 2, 2, 2];
     const F3: Frame = [3, 3, 3, 3, 3];
