@@ -5,6 +5,6 @@
 #[cfg(test)]
 extern crate std;
 
-// pub mod display_driver;
+pub mod display_driver;
 pub mod frame;
 // pub mod refresh_engine;

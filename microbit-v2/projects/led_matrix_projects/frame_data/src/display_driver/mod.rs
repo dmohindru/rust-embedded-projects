@@ -1,4 +1,4 @@
-mod microbit_driver;
+pub mod microbit_driver;
 use crate::frame::Frame;
 
 pub trait DisplayDriver {

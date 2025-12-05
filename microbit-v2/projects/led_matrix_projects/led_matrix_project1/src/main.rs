@@ -10,7 +10,10 @@ use embassy_sync::{
     mutex::Mutex,
 };
 use embassy_time::Timer;
-use frame_data::frame::{Direction, Frame, FrameData};
+use frame_data::{
+    display_driver::microbit_driver::MicroBitLedDriver,
+    frame::{Direction, Frame, FrameData},
+};
 use {defmt_rtt as _, panic_probe as _};
 
 static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
@@ -28,10 +31,10 @@ type FrameDataType = Mutex<ThreadModeRawMutex, Option<FrameData<5>>>;
 static FRAME_DATA: FrameDataType = Mutex::new(None);
 
 //--------------------
-// LED Refresh Task
+// Led Refresh task
 //--------------------
 #[embassy_executor::task]
-async fn led_refresh_task(mut rows: [Output<'static>; 5], mut cols: [Output<'static>; 5]) {
+async fn led_refresh_task(mut driver: MicroBitLedDriver) {
     loop {
         // Read frame once per scan → lock only once
         let frame = {
@@ -39,24 +42,7 @@ async fn led_refresh_task(mut rows: [Output<'static>; 5], mut cols: [Output<'sta
             frame_opt.as_ref().unwrap().current_frame().clone()
         };
 
-        for row in 0..5 {
-            for r in &mut rows {
-                r.set_high();
-            }
-
-            rows[row].set_low();
-            let row_bits = frame[row];
-
-            for col in 0..5 {
-                if (row_bits & (1 << (4 - col))) != 0 {
-                    cols[col].set_low();
-                } else {
-                    cols[col].set_high();
-                }
-            }
-
-            Timer::after_micros(300).await;
-        }
+        driver.render(&frame).await;
     }
 }
 
@@ -170,6 +156,8 @@ async fn main(spawner: Spawner) {
         ),
     ];
 
+    let led_driver = MicroBitLedDriver::new(rows, cols);
+
     spawner
         .spawn(button_task(sender_a, btn_a, Direction::Left))
         .expect("Failed to button A task");
@@ -181,6 +169,6 @@ async fn main(spawner: Spawner) {
         .expect("Failed to spawn button receiver task");
 
     spawner
-        .spawn(led_refresh_task(rows, cols))
+        .spawn(led_refresh_task(led_driver))
         .expect("Failed to spawn led refresh task");
 }
