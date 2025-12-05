@@ -1,5 +1,6 @@
-pub mod microbit_driver;
+mod microbit_led_driver;
 use crate::frame::Frame;
+pub use microbit_led_driver::MicroBitLedDriver;
 
 pub trait DisplayDriver {
     /// Called once per refresh tick with the current frame data.

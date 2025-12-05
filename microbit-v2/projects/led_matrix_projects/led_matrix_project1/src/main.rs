@@ -1,6 +1,11 @@
 #![no_std]
 #![no_main]
 
+use common_utils::{
+    button::DebouncedButton,
+    display_driver::MicroBitLedDriver,
+    frame::{Direction, Frame, FrameData},
+};
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_nrf::gpio::{Input, Output, Pull};
@@ -10,10 +15,6 @@ use embassy_sync::{
     mutex::Mutex,
 };
 use embassy_time::Timer;
-use frame_data::{
-    display_driver::microbit_driver::MicroBitLedDriver,
-    frame::{Direction, Frame, FrameData},
-};
 use {defmt_rtt as _, panic_probe as _};
 
 static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
@@ -52,18 +53,14 @@ async fn led_refresh_task(mut driver: MicroBitLedDriver) {
 #[embassy_executor::task(pool_size = 2)]
 async fn button_task(
     sender: Sender<'static, ThreadModeRawMutex, Direction, 2>,
-    mut button: Input<'static>,
+    mut button: DebouncedButton,
     value: Direction,
 ) {
-    loop {
-        button.wait_for_low().await;
-
-        Timer::after_millis(20).await;
-
-        if button.is_high() {
+    button
+        .wait(|| async {
             sender.send(value).await;
-        }
-    }
+        })
+        .await;
 }
 
 //--------------------
@@ -88,6 +85,8 @@ async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(Default::default());
     let btn_a = Input::new(p.P0_14, Pull::Up);
     let btn_b = Input::new(p.P0_23, Pull::Up);
+    let debounced_button_a = DebouncedButton::new(btn_a, 20);
+    let debounced_button_b = DebouncedButton::new(btn_b, 20);
     let sender_a = CHANNEL.sender();
     let sender_b = CHANNEL.sender();
     let receiver = CHANNEL.receiver();
@@ -159,10 +158,10 @@ async fn main(spawner: Spawner) {
     let led_driver = MicroBitLedDriver::new(rows, cols);
 
     spawner
-        .spawn(button_task(sender_a, btn_a, Direction::Left))
+        .spawn(button_task(sender_a, debounced_button_a, Direction::Left))
         .expect("Failed to button A task");
     spawner
-        .spawn(button_task(sender_b, btn_b, Direction::Right))
+        .spawn(button_task(sender_b, debounced_button_b, Direction::Right))
         .expect("Failed to spawn button B task");
     spawner
         .spawn(button_receiver(receiver))
