@@ -2,11 +2,11 @@ mod microbit_led_driver;
 use crate::frame::Frame;
 pub use microbit_led_driver::MicroBitLedDriver;
 
-pub trait DisplayDriver {
-    /// Called once per refresh tick with the current frame data.
-    /// The implementor decides how to push it to hardware.
-    fn render(&mut self, frame: &Frame);
-}
+// pub trait DisplayDriver {
+//     /// Called once per refresh tick with the current frame data.
+//     /// The implementor decides how to push it to hardware.
+//     fn render(&mut self, frame: &Frame);
+// }
 
 pub trait Delay {
     fn delay_us(&mut self, us: u32);
