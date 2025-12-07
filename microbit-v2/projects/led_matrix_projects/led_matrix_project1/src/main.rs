@@ -14,7 +14,6 @@ use embassy_sync::{
     channel::{Channel, Receiver, Sender},
     mutex::Mutex,
 };
-use embassy_time::Timer;
 use {defmt_rtt as _, panic_probe as _};
 
 static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
