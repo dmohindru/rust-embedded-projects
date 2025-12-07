@@ -21,7 +21,3 @@ embassy-sync = { workspace = true }
 panic-probe = { workspace = true }
 heapless = { workspace = true }
 common-utils = { path = "../common_utils" }
-
-
-[profile.release]
-debug = 2
