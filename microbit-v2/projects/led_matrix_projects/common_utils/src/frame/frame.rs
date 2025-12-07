@@ -1,95 +1,131 @@
-use defmt::Format;
-use heapless::Vec;
-
-#[derive(Format, Clone, Copy)]
-pub enum Direction {
-    Left,
-    Right,
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Frame<const R: usize, const C: usize> {
+    rows: [u32; R],
 }
 
-// pub struct FrameData<const N: usize> {
-//     frames: Vec<Frame, N>,
-//     index: usize,
-// }
+impl<const R: usize, const C: usize> Frame<R, C> {
+    pub fn new(rows: [u32; R]) -> Self {
+        const fn assert_max<const R: usize, const C: usize>() {
+            if R > 32 || C > 32 {
+                panic!("Max supported size of Row(R) and Column(C) is 32");
+            }
+        }
 
-// impl<const N: usize> FrameData<N> {
-//     pub fn new(initial_frames: &[Frame]) -> Self {
-//         let mut frames = Vec::new();
+        assert_max::<R, C>();
+        Self { rows }
+    }
 
-//         for f in initial_frames {
-//             frames
-//                 .push(*f)
-//                 .expect("unable to insert frame into frame data");
-//         }
-//         let mid = frames.len() / 2;
+    #[inline]
+    fn assert_idx(r: usize, c: usize) {
+        if r >= R || c >= C {
+            panic!(
+                "Frame index out of bounds (r={}, c={}, R={}, C={})",
+                r, c, R, C
+            );
+        }
+    }
 
-//         Self { frames, index: mid }
-//     }
+    #[inline]
+    fn assert_row_idx(r: usize) {
+        if r >= R {
+            panic!("Frame row index out of bounds (r={}, R={})", r, R);
+        }
+    }
 
-//     pub fn current_frame(&self) -> &Frame {
-//         &self.frames[self.index]
-//     }
+    pub fn set(&mut self, r: usize, c: usize, value: bool) {
+        Self::assert_idx(r, c);
 
-//     pub fn move_index(&mut self, direction: Direction) {
-//         match direction {
-//             Direction::Left => {
-//                 if self.index > 0 {
-//                     self.index -= 1;
-//                 }
-//             }
-//             Direction::Right => {
-//                 if self.index < self.frames.len() - 1 {
-//                     self.index += 1;
-//                 }
-//             }
-//         }
-//     }
-// }
+        if value {
+            self.rows[r] |= 1 << c;
+        } else {
+            self.rows[r] &= !(1 << c);
+        }
+    }
 
-// #[cfg(test)]
-// mod tests {
-//     // Forces std mode for the module
-//     extern crate std;
-//     use super::*;
-//     const F1: Frame = [1, 1, 1, 1, 1];
-//     const F2: Frame = [2, 2, 2, 2, 2];
-//     const F3: Frame = [3, 3, 3, 3, 3];
+    pub fn get(&self, r: usize, c: usize) -> bool {
+        Self::assert_idx(r, c);
+        (self.rows[r] >> c) & 1 == 1
+    }
 
-//     const FRAMES: [Frame; 3] = [F1, F2, F3];
+    pub fn get_row(&self, r: usize) -> &u32 {
+        Self::assert_row_idx(r);
+        &self.rows[r]
+    }
+}
 
-//     #[test]
-//     fn should_return_center_frame() {
-//         let frame_data = FrameData::<3>::new(&FRAMES);
-//         assert_eq!(&F2, frame_data.current_frame());
-//     }
+#[cfg(test)]
+mod tests {
+    use crate::frame::Frame;
+    static FRAME_DATA: [u32; 32] = [0x11111111; 32]; // [0001 0001 0001 0001 0001 0001 0001 0001; 32]
 
-//     #[test]
-//     fn should_move_frame_to_left() {
-//         let mut frame_data = FrameData::<3>::new(&FRAMES);
-//         frame_data.move_index(Direction::Left);
-//         assert_eq!(&F1, frame_data.current_frame());
-//     }
+    #[test]
+    #[should_panic(expected = "Max supported size of Row(R) and Column(C) is 32")]
+    fn should_panic_when_frame_created_with_column_size_greater_than_32() {
+        let frame_data: [u32; 33] = [0x1111; 33];
+        Frame::<33, 12>::new(frame_data);
+    }
 
-//     #[test]
-//     fn should_not_move_frame_past_leftmost_position() {
-//         let mut frame_data = FrameData::<3>::new(&FRAMES);
-//         frame_data.move_index(Direction::Left);
-//         frame_data.move_index(Direction::Left);
-//         assert_eq!(&F1, frame_data.current_frame());
-//     }
+    #[test]
+    fn should_create_frame_when_row_column_within_bound() {
+        let frame_data: [u32; 32] = [0x1111; 32];
+        Frame::<32, 32>::new(frame_data);
+    }
 
-//     #[test]
-//     fn should_move_frame_to_right() {
-//         let mut frame_data = FrameData::<3>::new(&FRAMES);
-//         frame_data.move_index(Direction::Right);
-//         assert_eq!(&F3, frame_data.current_frame());
-//     }
+    #[test]
+    #[should_panic(expected = "Frame index out of bounds (r=0, c=33, R=32, C=32)")]
+    fn should_panic_when_setting_frame_column_out_of_bound() {
+        let mut frame = Frame::<32, 32>::new(FRAME_DATA);
+        frame.set(0, 33, false);
+    }
 
-//     #[test]
-//     fn should_not_move_frame_past_rightmost_position() {
-//         let mut frame_data = FrameData::<3>::new(&FRAMES);
-//         frame_data.move_index(Direction::Right);
-//         frame_data.move_index(Direction::Right);
-//         assert_eq!(&F3, frame_data.current_frame());
-//     }
-// }
+    #[test]
+    #[should_panic(expected = "Frame index out of bounds (r=32, c=32, R=32, C=32)")]
+    fn should_panic_when_setting_frame_row_out_of_bound() {
+        let mut frame = Frame::<32, 32>::new(FRAME_DATA);
+        frame.set(32, 32, false);
+    }
+
+    #[test]
+    fn should_set_frame_bit_when_row_column_within_bound() {
+        let mut frame = Frame::<32, 32>::new(FRAME_DATA);
+        frame.set(16, 15, true);
+        let frame_bit = frame.get(16, 15);
+        assert_eq!(true, frame_bit);
+    }
+
+    #[test]
+    fn should_clear_frame_bit_when_row_column_within_bound() {
+        let mut frame = Frame::<32, 32>::new(FRAME_DATA);
+        frame.set(16, 16, false);
+        let frame_bit = frame.get(16, 16);
+        assert_eq!(false, frame_bit);
+    }
+
+    #[test]
+    #[should_panic(expected = "Frame index out of bounds (r=32, c=16, R=32, C=32)")]
+    fn should_panic_when_getting_frame_bit_out_of_bound() {
+        let frame = Frame::<32, 32>::new(FRAME_DATA);
+        frame.get(32, 16);
+    }
+
+    #[test]
+    fn should_get_frame_bit_when_row_column_within_bound() {
+        let frame = Frame::<32, 32>::new(FRAME_DATA);
+        let frame_bit = frame.get(16, 16);
+        assert_eq!(true, frame_bit);
+    }
+
+    #[test]
+    #[should_panic(expected = "Frame row index out of bounds (r=32, R=32)")]
+    fn should_panic_when_getting_row_data_out_of_bound() {
+        let frame = Frame::<32, 32>::new(FRAME_DATA);
+        frame.get_row(32);
+    }
+
+    #[test]
+    fn should_get_row_data_when_row_index_within_bound() {
+        let frame = Frame::<32, 32>::new(FRAME_DATA);
+        let row_data = frame.get_row(16);
+        assert_eq!(0x11111111, *row_data);
+    }
+}

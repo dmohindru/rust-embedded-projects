@@ -4,7 +4,7 @@
 use common_utils::{
     button::DebouncedButton,
     display_driver::MicroBitLedDriver,
-    frame::{Direction, Frame, FrameData},
+    frame::{Direction, Frame, FrameCursor},
 };
 use defmt::info;
 use embassy_executor::Spawner;
@@ -18,17 +18,15 @@ use {defmt_rtt as _, panic_probe as _};
 
 static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
 
-const COL1: Frame = [0x10, 0x10, 0x10, 0x10, 0x10];
-const COL2: Frame = [0x08, 0x08, 0x08, 0x08, 0x08];
-const COL3: Frame = [0x04, 0x04, 0x04, 0x04, 0x04];
-const COL4: Frame = [0x02, 0x02, 0x02, 0x02, 0x02];
-const COL5: Frame = [0x01, 0x01, 0x01, 0x01, 0x01];
+const COL1: [u32; 5] = [0x10, 0x10, 0x10, 0x10, 0x10];
+const COL2: [u32; 5] = [0x08, 0x08, 0x08, 0x08, 0x08];
+const COL3: [u32; 5] = [0x04, 0x04, 0x04, 0x04, 0x04];
+const COL4: [u32; 5] = [0x02, 0x02, 0x02, 0x02, 0x02];
+const COL5: [u32; 5] = [0x01, 0x01, 0x01, 0x01, 0x01];
 
-static FRAMES: &[Frame] = &[COL1, COL2, COL3, COL4, COL5];
+type FrameCursorType = Mutex<ThreadModeRawMutex, Option<FrameCursor<5, 5, 5>>>;
 
-type FrameDataType = Mutex<ThreadModeRawMutex, Option<FrameData<5>>>;
-
-static FRAME_DATA: FrameDataType = Mutex::new(None);
+static FRAME_CURSOR: FrameCursorType = Mutex::new(None);
 
 //--------------------
 // Led Refresh task
@@ -38,7 +36,7 @@ async fn led_refresh_task(mut driver: MicroBitLedDriver) {
     loop {
         // Read frame once per scan → lock only once
         let frame = {
-            let frame_opt = FRAME_DATA.lock().await;
+            let frame_opt = FRAME_CURSOR.lock().await;
             frame_opt.as_ref().unwrap().current_frame().clone()
         };
 
@@ -71,7 +69,7 @@ async fn button_receiver(receiver: Receiver<'static, ThreadModeRawMutex, Directi
         let button_pressed = receiver.receive().await;
         info!("Button pressed {}", button_pressed);
         {
-            let mut frame_data_option = FRAME_DATA.lock().await;
+            let mut frame_data_option = FRAME_CURSOR.lock().await;
             if let Some(frame_data) = frame_data_option.as_mut() {
                 frame_data.move_index(button_pressed);
             }
@@ -90,9 +88,15 @@ async fn main(spawner: Spawner) {
     let sender_b = CHANNEL.sender();
     let receiver = CHANNEL.receiver();
 
-    let frame_data = FrameData::<5>::new(&FRAMES);
+    let f1: Frame<5, 5> = Frame::<5, 5>::new(COL1);
+    let f2: Frame<5, 5> = Frame::<5, 5>::new(COL2);
+    let f3: Frame<5, 5> = Frame::<5, 5>::new(COL3);
+    let f4: Frame<5, 5> = Frame::<5, 5>::new(COL4);
+    let f5: Frame<5, 5> = Frame::<5, 5>::new(COL5);
+    let frames = [f1, f2, f3, f4, f5];
+    let frame_cursor = FrameCursor::<5, 5, 5>::new(&frames);
     {
-        *(FRAME_DATA.lock().await) = Some(frame_data);
+        *(FRAME_CURSOR.lock().await) = Some(frame_cursor);
     }
 
     // -----------------

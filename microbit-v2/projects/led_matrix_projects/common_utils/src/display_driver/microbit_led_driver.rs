@@ -13,24 +13,24 @@ impl MicroBitLedDriver {
         MicroBitLedDriver { rows, cols }
     }
 
-    // pub async fn render(&mut self, frame: &Frame) {
-    //     for row in 0..5 {
-    //         for r in &mut self.rows {
-    //             r.set_high();
-    //         }
+    pub async fn render(&mut self, frame: &Frame<5, 5>) {
+        for row in 0..5 {
+            for r in &mut self.rows {
+                r.set_high();
+            }
 
-    //         self.rows[row].set_low();
-    //         let row_bits = frame[row];
+            self.rows[row].set_low();
+            let row_bits = frame.get_row(row);
 
-    //         for col in 0..5 {
-    //             if (row_bits & (1 << (4 - col))) != 0 {
-    //                 self.cols[col].set_low();
-    //             } else {
-    //                 self.cols[col].set_high();
-    //             }
-    //         }
+            for col in 0..5 {
+                if (row_bits & (1 << (4 - col))) != 0 {
+                    self.cols[col].set_low();
+                } else {
+                    self.cols[col].set_high();
+                }
+            }
 
-    //         Timer::after_micros(300).await;
-    //     }
-    // }
+            Timer::after_micros(300).await;
+        }
+    }
 }

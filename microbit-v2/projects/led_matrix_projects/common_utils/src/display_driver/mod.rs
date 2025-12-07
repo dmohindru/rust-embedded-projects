@@ -1,5 +1,4 @@
 mod microbit_led_driver;
-use crate::frame::Frame;
 pub use microbit_led_driver::MicroBitLedDriver;
 
 // pub trait DisplayDriver {
@@ -8,11 +7,11 @@ pub use microbit_led_driver::MicroBitLedDriver;
 //     fn render(&mut self, frame: &Frame);
 // }
 
-pub trait Delay {
-    fn delay_us(&mut self, us: u32);
-}
+// pub trait Delay {
+//     fn delay_us(&mut self, us: u32);
+// }
 
-pub trait PinOutput {
-    fn set_high(&mut self);
-    fn set_low(&mut self);
-}
+// pub trait PinOutput {
+//     fn set_high(&mut self);
+//     fn set_low(&mut self);
+// }
