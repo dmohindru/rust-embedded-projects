@@ -1,8 +1,5 @@
 [workspace]
-members = [
-    "projects/project00_hello_world",
-    # "projects/project01_led_marix_projects/led_matrix_project1",
-]
+members = ["projects/project00_hello_world", "projects/led_matrix_projects/*"]
 resolver = "2"
 
 [workspace.package]
@@ -30,6 +27,12 @@ embassy-time = { version = "0.4.0", features = [
     "defmt",
     "defmt-timestamp-uptime",
 ] }
+embassy-sync = "0.5.0"
+heapless = "0.8"
 panic-probe = { version = "0.3.2", features = ["print-defmt"] }
+# async-trait is always available on no_std, but we must disable default std
+async-trait = { version = "0.1", default-features = false }
+
+
 [profile.release]
 debug = 2
