@@ -1,7 +1,18 @@
-use crate::display_driver::OutputPin;
+use crate::display_driver::{AsyncDelay, OutputPin};
 use crate::frame::Frame;
+use alloc::boxed::Box;
+use async_trait::async_trait;
 use embassy_nrf::gpio::Output;
 use embassy_time::Timer;
+
+pub struct EmbassyDelay;
+
+#[async_trait]
+impl AsyncDelay for EmbassyDelay {
+    async fn delay_micros(&mut self, us: u64) {
+        Timer::after_micros(us).await;
+    }
+}
 
 impl OutputPin for Output<'_> {
     fn set_high(&mut self) {
@@ -12,14 +23,15 @@ impl OutputPin for Output<'_> {
     }
 }
 
-pub struct MicroBitLedDriver<P: OutputPin> {
+pub struct MicroBitLedDriver<P: OutputPin, D: AsyncDelay> {
     rows: [P; 5],
     cols: [P; 5],
+    delay: D,
 }
 
-impl<P: OutputPin> MicroBitLedDriver<P> {
-    pub fn new(rows: [P; 5], cols: [P; 5]) -> Self {
-        MicroBitLedDriver { rows, cols }
+impl<P: OutputPin, D: AsyncDelay> MicroBitLedDriver<P, D> {
+    pub fn new(rows: [P; 5], cols: [P; 5], delay: D) -> Self {
+        MicroBitLedDriver { rows, cols, delay }
     }
 
     pub async fn render(&mut self, frame: &Frame<5, 5>) {
@@ -39,7 +51,7 @@ impl<P: OutputPin> MicroBitLedDriver<P> {
                 }
             }
 
-            Timer::after_micros(300).await;
+            self.delay.delay_micros(300).await;
         }
     }
 }

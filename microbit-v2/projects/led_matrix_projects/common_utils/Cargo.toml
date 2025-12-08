@@ -28,4 +28,4 @@ embassy-time = { workspace = true }
 [dev-dependencies]
 embedded-hal = "1.0.0-alpha.10"
 embedded-hal-mock = { version = "0.10", features = ["eh0"] }
-async-trait = { version = "0.1" }
+# async-trait = { version = "0.1" }

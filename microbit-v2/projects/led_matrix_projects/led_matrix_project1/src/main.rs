@@ -1,9 +1,10 @@
 #![no_std]
 #![no_main]
+#![allow(static_mut_refs)]
 
 use common_utils::{
     button::DebouncedButton,
-    display_driver::MicroBitLedDriver,
+    display_driver::{EmbassyDelay, MicroBitLedDriver},
     frame::{Direction, Frame, FrameCursor},
 };
 use defmt::info;
@@ -14,7 +15,11 @@ use embassy_sync::{
     channel::{Channel, Receiver, Sender},
     mutex::Mutex,
 };
+use embedded_alloc::Heap;
 use {defmt_rtt as _, panic_probe as _};
+
+#[global_allocator]
+static ALLOCATOR: Heap = Heap::empty();
 
 static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
 
@@ -32,7 +37,7 @@ static FRAME_CURSOR: FrameCursorType = Mutex::new(None);
 // Led Refresh task
 //--------------------
 #[embassy_executor::task]
-async fn led_refresh_task(mut driver: MicroBitLedDriver<Output<'static>>) {
+async fn led_refresh_task(mut driver: MicroBitLedDriver<Output<'static>, EmbassyDelay>) {
     loop {
         // Read frame once per scan → lock only once
         let frame = {
@@ -79,6 +84,14 @@ async fn button_receiver(receiver: Receiver<'static, ThreadModeRawMutex, Directi
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
+    // 8 KB heap — you choose the size
+    const HEAP_SIZE: usize = 8 * 1024;
+    static mut HEAP_MEM: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
+
+    unsafe {
+        ALLOCATOR.init(HEAP_MEM.as_ptr() as usize, HEAP_SIZE);
+    }
+
     let p = embassy_nrf::init(Default::default());
     let btn_a = Input::new(p.P0_14, Pull::Up);
     let btn_b = Input::new(p.P0_23, Pull::Up);
@@ -158,7 +171,9 @@ async fn main(spawner: Spawner) {
         ),
     ];
 
-    let led_driver = MicroBitLedDriver::new(rows, cols);
+    let delay = EmbassyDelay;
+
+    let led_driver = MicroBitLedDriver::new(rows, cols, delay);
 
     spawner
         .spawn(button_task(sender_a, debounced_button_a, Direction::Left))
