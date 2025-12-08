@@ -32,7 +32,7 @@ static FRAME_CURSOR: FrameCursorType = Mutex::new(None);
 // Led Refresh task
 //--------------------
 #[embassy_executor::task]
-async fn led_refresh_task(mut driver: MicroBitLedDriver) {
+async fn led_refresh_task(mut driver: MicroBitLedDriver<Output<'static>>) {
     loop {
         // Read frame once per scan → lock only once
         let frame = {

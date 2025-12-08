@@ -1,15 +1,24 @@
+use crate::display_driver::OutputPin;
+use crate::frame::Frame;
 use embassy_nrf::gpio::Output;
 use embassy_time::Timer;
 
-use crate::frame::Frame;
-
-pub struct MicroBitLedDriver {
-    rows: [Output<'static>; 5],
-    cols: [Output<'static>; 5],
+impl OutputPin for Output<'_> {
+    fn set_high(&mut self) {
+        Output::set_high(self);
+    }
+    fn set_low(&mut self) {
+        Output::set_low(self);
+    }
 }
 
-impl MicroBitLedDriver {
-    pub fn new(rows: [Output<'static>; 5], cols: [Output<'static>; 5]) -> Self {
+pub struct MicroBitLedDriver<P: OutputPin> {
+    rows: [P; 5],
+    cols: [P; 5],
+}
+
+impl<P: OutputPin> MicroBitLedDriver<P> {
+    pub fn new(rows: [P; 5], cols: [P; 5]) -> Self {
         MicroBitLedDriver { rows, cols }
     }
 
