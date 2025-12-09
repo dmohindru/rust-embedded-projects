@@ -26,6 +26,7 @@ embassy-time = { workspace = true }
 
 # dev dependencies for testing with mocks
 [dev-dependencies]
+# TODO move to parent cargo.toml
+tokio = { version = "1", features = ["full"] }
 embedded-hal = "1.0.0-alpha.10"
-embedded-hal-mock = { version = "0.10", features = ["eh0"] }
-# async-trait = { version = "0.1" }
+embedded-hal-mock = { version = "0.10", features = ["eh1"] }
