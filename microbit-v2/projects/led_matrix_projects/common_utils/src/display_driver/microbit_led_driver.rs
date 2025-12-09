@@ -117,7 +117,6 @@ mod tests {
     }
 
     #[tokio::test]
-    // #[test]
     async fn test_led_matrix_driver() {
         let col1 = TestPin::new(&[]);
         let col2 = TestPin::new(&[]);
