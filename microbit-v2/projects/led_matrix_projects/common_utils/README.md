@@ -169,4 +169,9 @@ pub fn tick<D: DisplayDriver>(&mut self, driver: &mut D, frame: &Frame) {
 
 ---
 
-This can serve as a blueprint
+## Research points
+
+- What problem does `async-trait` solves
+- why do we need the need to Box, Vec with async-trait
+- Why we need an allocator extern crate alloc
+- Why we need an allocator implementation crate like use embedded_alloc::Heap;

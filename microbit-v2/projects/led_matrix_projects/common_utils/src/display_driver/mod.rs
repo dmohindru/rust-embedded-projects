@@ -1,17 +1,15 @@
 mod microbit_led_driver;
+use alloc::boxed::Box;
+use async_trait::async_trait;
+pub use microbit_led_driver::EmbassyDelay;
 pub use microbit_led_driver::MicroBitLedDriver;
 
-// pub trait DisplayDriver {
-//     /// Called once per refresh tick with the current frame data.
-//     /// The implementor decides how to push it to hardware.
-//     fn render(&mut self, frame: &Frame);
-// }
+#[async_trait]
+pub trait AsyncDelay {
+    async fn delay_micros(&mut self, us: u64);
+}
 
-// pub trait Delay {
-//     fn delay_us(&mut self, us: u32);
-// }
-
-// pub trait PinOutput {
-//     fn set_high(&mut self);
-//     fn set_low(&mut self);
-// }
+pub trait OutputPin {
+    fn set_high(&mut self);
+    fn set_low(&mut self);
+}
