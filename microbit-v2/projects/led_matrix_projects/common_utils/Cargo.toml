@@ -18,15 +18,7 @@ embassy-nrf = { workspace = true }
 async-trait = { workspace = true }
 embassy-time = { workspace = true }
 
-
-# conditional dependencies for "std" (used in tests or PC)
-# [dependencies.embedded-hal]
-# version = "1.0.0-alpha.10"
-# optional = true
-
-# dev dependencies for testing with mocks
 [dev-dependencies]
-# TODO move to parent cargo.toml
-tokio = { version = "1", features = ["full"] }
-embedded-hal = "1.0.0-alpha.10"
-embedded-hal-mock = { version = "0.10", features = ["eh1"] }
+tokio = { workspace = true }
+embedded-hal = { workspace = true }
+embedded-hal-mock = { workspace = true }
