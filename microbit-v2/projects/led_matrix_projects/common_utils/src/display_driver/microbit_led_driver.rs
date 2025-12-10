@@ -63,7 +63,7 @@ mod tests {
     use crate::frame::Frame;
     use async_trait::async_trait;
     use core::cell::Cell;
-    use embedded_hal::digital::{InputPin, OutputPin};
+    use embedded_hal::digital::OutputPin;
     use embedded_hal_mock::eh1::pin::{
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
@@ -118,24 +118,89 @@ mod tests {
 
     #[tokio::test]
     async fn test_led_matrix_driver() {
-        let col1 = TestPin::new(&[]);
-        let col2 = TestPin::new(&[]);
-        let col3 = TestPin::new(&[]);
-        let col4 = TestPin::new(&[]);
-        let col5 = TestPin::new(&[]);
+        let col1 = TestPin::new(&[
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+        ]);
+        let col2 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+        ]);
+        let col3 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+        ]);
+        let col4 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ]);
+        let col5 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+        ]);
         let cols = [col1, col2, col3, col4, col5];
 
-        let row1 = TestPin::new(&[]);
-        let row2 = TestPin::new(&[]);
-        let row3 = TestPin::new(&[]);
-        let row4 = TestPin::new(&[]);
-        let row5 = TestPin::new(&[]);
+        let row1 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+        ]);
+        let row2 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+        ]);
+        let row3 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+        ]);
+        let row4 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ]);
+        let row5 = TestPin::new(&[
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+        ]);
         let rows = [row1, row2, row3, row4, row5];
 
         let delay = TestDelay::new();
 
         let mut led_matrix_driver = MicroBitLedDriver::<TestPin, TestDelay>::new(rows, cols, delay);
-        let frame = Frame::<5, 5>::new([0x01, 0x02, 0x03, 0x04, 0x05]);
+        let frame = Frame::<5, 5>::new([0x10, 0x08, 0x04, 0x02, 0x01]);
         led_matrix_driver.render(&frame).await;
 
         for r in led_matrix_driver.rows.iter_mut() {
@@ -145,31 +210,7 @@ mod tests {
         for c in led_matrix_driver.cols.iter_mut() {
             c.done();
         }
+
+        assert_eq!(led_matrix_driver.delay.calls.get(), 5);
     }
-
-    // #[test]
-    // fn test() {
-    //     // let err = MockError::Io(ErrorKind::NotConnected);
-    //     let expectations = [
-    //         PinTransaction::get(PinState::High),
-    //         PinTransaction::get(PinState::Low),
-    //         PinTransaction::get(PinState::High),
-    //         PinTransaction::set(PinState::High),
-    //         PinTransaction::set(PinState::Low),
-    //         PinTransaction::set(PinState::High),
-    //     ];
-
-    //     let mut pin = PinMock::new(&expectations);
-    //     // assert_eq!(pin.is_high().unwrap(), true);
-    //     // assert_eq!(pin.is_low().unwrap(), true);
-    //     // assert_eq!(pin.is_high().unwrap(), true);
-    //     pin.is_high().unwrap();
-    //     pin.is_low().unwrap();
-    //     pin.is_high().unwrap();
-    //     pin.set_high().unwrap();
-    //     pin.set_low().unwrap();
-    //     pin.set_high().unwrap();
-
-    //     pin.done();
-    // }
 }
