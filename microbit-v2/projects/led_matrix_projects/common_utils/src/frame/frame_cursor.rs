@@ -1,12 +1,5 @@
-use crate::frame::Frame;
-use defmt::Format;
+use crate::frame::{Direction, Frame};
 use heapless::Vec;
-
-#[derive(Format, Clone, Copy)]
-pub enum Direction {
-    Left,
-    Right,
-}
 
 pub struct FrameCursor<const N: usize, const R: usize, const C: usize> {
     frames: Vec<Frame<R, C>, N>,
