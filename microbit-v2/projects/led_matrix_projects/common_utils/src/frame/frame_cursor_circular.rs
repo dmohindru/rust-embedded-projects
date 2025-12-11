@@ -1,12 +1,5 @@
-use crate::frame::Frame;
-use defmt::Format;
+use crate::frame::{Direction, Frame};
 use heapless::Vec;
-
-#[derive(Format, Clone, Copy)]
-pub enum Rotation {
-    ClockWise,
-    AntiClockWise,
-}
 
 pub struct FrameCursorCircular<const N: usize, const R: usize, const C: usize> {
     frames: Vec<Frame<R, C>, N>,
@@ -30,12 +23,12 @@ impl<const N: usize, const R: usize, const C: usize> FrameCursorCircular<N, R, C
         &self.frames[self.index]
     }
 
-    pub fn move_index(&mut self, rotation: Rotation) {
-        match rotation {
-            Rotation::ClockWise => {
+    pub fn move_index(&mut self, direction: Direction) {
+        match direction {
+            Direction::Right => {
                 self.index = (self.index + 1) % N;
             }
-            Rotation::AntiClockWise => {
+            Direction::Left => {
                 self.index = (self.index + N - 1) % N;
             }
         }
@@ -71,34 +64,34 @@ mod tests {
     #[test]
     fn should_move_frame_to_next_for_clockwise_circular_rotation() {
         let mut frame_cursor = before_each();
-        frame_cursor.move_index(Rotation::ClockWise);
+        frame_cursor.move_index(Direction::Right);
         assert_eq!(&frame(F2_DATA), frame_cursor.current_frame());
     }
 
     #[test]
     fn should_move_back_to_start_position_for_multiple_clockwise_circular_rotation() {
         let mut frame_cursor = before_each();
-        frame_cursor.move_index(Rotation::ClockWise);
-        frame_cursor.move_index(Rotation::ClockWise);
-        frame_cursor.move_index(Rotation::ClockWise);
-        frame_cursor.move_index(Rotation::ClockWise);
+        frame_cursor.move_index(Direction::Right);
+        frame_cursor.move_index(Direction::Right);
+        frame_cursor.move_index(Direction::Right);
+        frame_cursor.move_index(Direction::Right);
         assert_eq!(&frame(F1_DATA), frame_cursor.current_frame());
     }
 
     #[test]
     fn should_move_frame_to_previous_position_for_anticlockwise_circular_rotation() {
         let mut frame_cursor = before_each();
-        frame_cursor.move_index(Rotation::ClockWise);
-        frame_cursor.move_index(Rotation::AntiClockWise);
+        frame_cursor.move_index(Direction::Right);
+        frame_cursor.move_index(Direction::Left);
         assert_eq!(&frame(F1_DATA), frame_cursor.current_frame());
     }
 
     #[test]
     fn should_move_frame_to_last_position_for_multiple_anticlockwise_circular_rotation() {
         let mut frame_cursor = before_each();
-        frame_cursor.move_index(Rotation::ClockWise);
-        frame_cursor.move_index(Rotation::AntiClockWise);
-        frame_cursor.move_index(Rotation::AntiClockWise);
+        frame_cursor.move_index(Direction::Right);
+        frame_cursor.move_index(Direction::Left);
+        frame_cursor.move_index(Direction::Left);
         assert_eq!(&frame(F4_DATA), frame_cursor.current_frame());
     }
 }

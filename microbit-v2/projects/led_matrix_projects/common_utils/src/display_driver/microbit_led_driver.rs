@@ -37,10 +37,10 @@ impl<P: OutputPin, D: AsyncDelay> MicroBitLedDriver<P, D> {
     pub async fn render(&mut self, frame: &Frame<5, 5>) {
         for row in 0..5 {
             for r in &mut self.rows {
-                r.set_high();
+                r.set_low();
             }
 
-            self.rows[row].set_low();
+            self.rows[row].set_high();
             let row_bits = frame.get_row(row);
 
             for col in 0..5 {
@@ -51,7 +51,7 @@ impl<P: OutputPin, D: AsyncDelay> MicroBitLedDriver<P, D> {
                 }
             }
 
-            self.delay.delay_micros(300).await;
+            self.delay.delay_micros(1000).await;
         }
     }
 }
@@ -156,44 +156,44 @@ mod tests {
         let cols = [col1, col2, col3, col4, col5];
 
         let row1 = TestPin::new(&[
-            PinTransaction::set(PinState::High),
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
         ]);
         let row2 = TestPin::new(&[
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
         ]);
         let row3 = TestPin::new(&[
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
         ]);
         let row4 = TestPin::new(&[
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
         ]);
         let row5 = TestPin::new(&[
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
-            PinTransaction::set(PinState::High),
             PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
         ]);
         let rows = [row1, row2, row3, row4, row5];
 

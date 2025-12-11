@@ -8,7 +8,7 @@
 - on pressing left button it move to left till left most column
 - on pressing right button it move to right till right most column
 
-### Project 2
+### [Project 2](./led_matrix_project2/)
 
 **Moving arrow in clockwise and anticlock wise direction**
 
