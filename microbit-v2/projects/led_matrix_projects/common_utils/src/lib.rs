@@ -4,3 +4,4 @@ extern crate alloc;
 pub mod button;
 pub mod display_driver;
 pub mod frame;
+pub mod utils;
