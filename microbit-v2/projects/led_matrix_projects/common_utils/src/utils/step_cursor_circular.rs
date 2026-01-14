@@ -52,7 +52,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Invalid values for step size and num_steps to reach min_value")]
-    fn should_panic_when_initial_value_less_than_or_equal_zero() {
+    fn should_panic_when_invalid_parameters_passed() {
         get_circular_step_cursor(1000, 500, 250, 4);
     }
 
