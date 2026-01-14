@@ -6,22 +6,21 @@ use common_utils::{
     button::DebouncedButton,
     display_driver::{EmbassyDelay, MicroBitLedDriver},
     frame::{Direction, Frame, FrameCursorCircular},
+    utils::StepCursorCircular,
 };
-use defmt::info;
+
 use embassy_executor::Spawner;
 use embassy_nrf::gpio::{Input, Output, Pull};
 use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex,
-    channel::{Channel, Receiver, Sender},
-    mutex::Mutex,
+    mutex::{Mutex, MutexGuard},
 };
+use embassy_time::Timer;
 use embedded_alloc::Heap;
 use {defmt_rtt as _, panic_probe as _};
 
 #[global_allocator]
 static ALLOCATOR: Heap = Heap::empty();
-
-static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
 
 const TWELVE: [u32; 5] = [0b00100, 0b00100, 0b00100, 0b00000, 0b00000];
 const ONE: [u32; 5] = [0b00001, 0b00010, 0b00100, 0b00000, 0b00000];
@@ -33,8 +32,12 @@ const NINE: [u32; 5] = [0b00000, 0b00000, 0b11100, 0b00000, 0b00000];
 const ELEVEN: [u32; 5] = [0b10000, 0b01000, 0b00100, 0b00000, 0b00000];
 
 type FrameCursorType = Mutex<ThreadModeRawMutex, Option<FrameCursorCircular<8, 5, 5>>>;
+type StepCursorType = Mutex<ThreadModeRawMutex, Option<StepCursorCircular>>;
+type DirectionType = Mutex<ThreadModeRawMutex, Direction>;
 
 static FRAME_CURSOR: FrameCursorType = Mutex::new(None);
+static STEP_CURSOR: StepCursorType = Mutex::new(None);
+static DIRECTION: DirectionType = Mutex::new(Direction::Right);
 
 //--------------------
 // Led Refresh task
@@ -53,34 +56,83 @@ async fn led_refresh_task(mut driver: MicroBitLedDriver<Output<'static>, Embassy
 }
 
 //--------------------
-// Button Task
+// Left Button Task
 //--------------------
-#[embassy_executor::task(pool_size = 2)]
-async fn button_task(
-    sender: Sender<'static, ThreadModeRawMutex, Direction, 2>,
-    mut button: DebouncedButton,
-    value: Direction,
-) {
+#[embassy_executor::task]
+async fn left_button_task(mut button: DebouncedButton) {
     button
         .wait(|| async {
-            sender.send(value).await;
+            {
+                let mut direction: MutexGuard<'_, ThreadModeRawMutex, Direction> =
+                    DIRECTION.lock().await;
+                *direction = direction.toggle();
+            }
         })
         .await;
 }
 
 //--------------------
-// Receiver Task
+// Right Button Task
 //--------------------
 #[embassy_executor::task]
-async fn button_receiver(receiver: Receiver<'static, ThreadModeRawMutex, Direction, 2>) {
-    loop {
-        let button_pressed = receiver.receive().await;
-        info!("Button pressed {}", button_pressed);
-        {
-            let mut frame_data_option = FRAME_CURSOR.lock().await;
-            if let Some(frame_data) = frame_data_option.as_mut() {
-                frame_data.move_index(button_pressed);
+async fn right_button_task(mut button: DebouncedButton) {
+    button
+        .wait(|| async {
+            {
+                let mut step_cursor_option: MutexGuard<
+                    '_,
+                    ThreadModeRawMutex,
+                    Option<StepCursorCircular>,
+                > = STEP_CURSOR.lock().await;
+                if let Some(step_cursor) = step_cursor_option.as_mut() {
+                    step_cursor.move_step(Direction::Right);
+                }
             }
+        })
+        .await;
+}
+
+//--------------------
+// Timer Task
+//--------------------
+#[embassy_executor::task]
+async fn timer_task() {
+    {
+        loop {
+            // ---- 1. Read direction (copy, cheap) ----
+            let direction = {
+                let direction_guard: MutexGuard<'_, ThreadModeRawMutex, Direction> =
+                    DIRECTION.lock().await;
+                *direction_guard
+            }; // direction guard dropped here
+
+            // ---- 2. Move frame cursor ----
+            {
+                let mut frame_cursor_guard: MutexGuard<
+                    '_,
+                    ThreadModeRawMutex,
+                    Option<FrameCursorCircular<8, 5, 5>>,
+                > = FRAME_CURSOR.lock().await;
+                if let Some(frame_cursor) = frame_cursor_guard.as_mut() {
+                    frame_cursor.move_index(direction);
+                }
+            } // frame_cursor_guard dropped here
+
+            // ---- 3. Read delay from step cursor ----
+            let delay_ms = {
+                let step_cursor_guard: MutexGuard<
+                    '_,
+                    ThreadModeRawMutex,
+                    Option<StepCursorCircular>,
+                > = STEP_CURSOR.lock().await;
+                step_cursor_guard
+                    .as_ref()
+                    .map(|cursor| cursor.current_value())
+                    .unwrap_or(2000)
+            }; // Step cursor dropped here
+
+            // ---- 4. Sleep (NO LOCKS HELD) ----
+            Timer::after_millis(delay_ms as u64).await;
         }
     }
 }
@@ -100,9 +152,6 @@ async fn main(spawner: Spawner) {
     let btn_b = Input::new(p.P0_23, Pull::Up);
     let debounced_button_a = DebouncedButton::new(btn_a, 20);
     let debounced_button_b = DebouncedButton::new(btn_b, 20);
-    let sender_a = CHANNEL.sender();
-    let sender_b = CHANNEL.sender();
-    let receiver = CHANNEL.receiver();
 
     let f1: Frame<5, 5> = Frame::<5, 5>::new(TWELVE);
     let f2: Frame<5, 5> = Frame::<5, 5>::new(ONE);
@@ -116,6 +165,10 @@ async fn main(spawner: Spawner) {
     let frame_cursor = FrameCursorCircular::<8, 5, 5>::new(&frames);
     {
         *(FRAME_CURSOR.lock().await) = Some(frame_cursor);
+    }
+    let step_cursor = StepCursorCircular::new(2000, 500, 250, 7);
+    {
+        *(STEP_CURSOR.lock().await) = Some(step_cursor);
     }
 
     // -----------------
@@ -182,14 +235,14 @@ async fn main(spawner: Spawner) {
     let led_driver = MicroBitLedDriver::new(rows, cols, delay);
 
     spawner
-        .spawn(button_task(sender_a, debounced_button_a, Direction::Left))
-        .expect("Failed to button A task");
+        .spawn(left_button_task(debounced_button_a))
+        .expect("Failed to spawn button A task");
     spawner
-        .spawn(button_task(sender_b, debounced_button_b, Direction::Right))
+        .spawn(right_button_task(debounced_button_b))
         .expect("Failed to spawn button B task");
     spawner
-        .spawn(button_receiver(receiver))
-        .expect("Failed to spawn button receiver task");
+        .spawn(timer_task())
+        .expect("Failed to spawn timer task");
 
     spawner
         .spawn(led_refresh_task(led_driver))
