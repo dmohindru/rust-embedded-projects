@@ -14,9 +14,9 @@
 
 - there is an arrow starting at center of led matrix towards edges
 - pressing left button move it clock wise direction
-- pressing right button move it anit clock wise direction
+- pressing right button move it anti clock wise direction
 
-### Project 3
+### [Project 3](./led_matrix_project3/)
 
 **Moving arrow in clockwise and anticlock wise direction with timer**
 
@@ -26,23 +26,24 @@
 
 ### Project 4
 
-**Brightness control**
+**Manual Text Scroll**
 
-- A star shape is displayed in led matrix
-- pressing left button will make increase its brightness till full glow
-- pressing right button will make decrease its brightness till totally off
+- At a given movement a single character of a text is show on led matrix
+- Pressing left button will scroll text to right and the end of string it wraps around
+- Pressing right button will scroll text to left and the start of string it wraps around
 
 ### Project 5
 
-**Fade-in and fade-out effect**
+**Text Scroll in clockwise and anticlock wise direction with timer**
 
-- A star is displayed in led matrix
-- it fades out
-- then comes back to be faded out
+- At a given movement a single character of a text is show on led matrix
+- On a timer interrupt text is scrolled in either left or right direction as per state of left button pressed. Initial direction is right
+- Pressing left button will toggle scroll direction between left/right
+- Pressing right button will cycle between fast to slow movement.
 
 ### Project 6
 
-**Scrolling text**
+**Scrolling Text Animation**
 
 - Display a scrolling text like Dhruv Mohindru
 
