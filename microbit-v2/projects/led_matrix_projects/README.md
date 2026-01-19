@@ -24,7 +24,7 @@
 - pressing left button will toggle direction of arrow movement clockwise/anticlockwise.
 - pressing right button will cycle between fast to slow movement.
 
-### Project 4
+### [Project 4](./led_matrix_project4/)
 
 **Manual Text Scroll**
 
