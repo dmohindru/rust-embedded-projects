@@ -5,7 +5,7 @@
 use common_utils::{
     button::DebouncedButton,
     display_driver::{EmbassyDelay, MicroBitLedDriver},
-    frame::{Direction, Frame, FrameCursorCircular},
+    frame::{decode_frames, Direction, FrameCursorCircular},
     utils::StepCursorCircular,
 };
 
@@ -22,16 +22,9 @@ use {defmt_rtt as _, panic_probe as _};
 #[global_allocator]
 static ALLOCATOR: Heap = Heap::empty();
 
-const TWELVE: [u32; 5] = [0b00100, 0b00100, 0b00100, 0b00000, 0b00000];
-const ONE: [u32; 5] = [0b00001, 0b00010, 0b00100, 0b00000, 0b00000];
-const THREE: [u32; 5] = [0b00000, 0b00000, 0b00111, 0b00000, 0b00000];
-const FIVE: [u32; 5] = [0b00000, 0b00000, 0b00100, 0b00010, 0b00001];
-const SIX: [u32; 5] = [0b00000, 0b00000, 0b00100, 0b00100, 0b00100];
-const SEVEN: [u32; 5] = [0b00000, 0b00000, 0b00100, 0b01000, 0b10000];
-const NINE: [u32; 5] = [0b00000, 0b00000, 0b11100, 0b00000, 0b00000];
-const ELEVEN: [u32; 5] = [0b10000, 0b01000, 0b00100, 0b00000, 0b00000];
+static FRAME_BYTES: &[u8] = include_bytes!("../assets/dhruv.bin");
 
-type FrameCursorType = Mutex<ThreadModeRawMutex, Option<FrameCursorCircular<8, 5, 5>>>;
+type FrameCursorType = Mutex<ThreadModeRawMutex, Option<FrameCursorCircular<5, 5, 5>>>;
 type StepCursorType = Mutex<ThreadModeRawMutex, Option<StepCursorCircular>>;
 type DirectionType = Mutex<ThreadModeRawMutex, Direction>;
 
@@ -127,7 +120,7 @@ async fn timer_task() {
                 let mut frame_cursor_guard: MutexGuard<
                     '_,
                     ThreadModeRawMutex,
-                    Option<FrameCursorCircular<8, 5, 5>>,
+                    Option<FrameCursorCircular<5, 5, 5>>,
                 > = FRAME_CURSOR.lock().await;
                 if let Some(frame_cursor) = frame_cursor_guard.as_mut() {
                     frame_cursor.move_index(direction);
@@ -153,16 +146,8 @@ async fn main(spawner: Spawner) {
     let debounced_button_a = DebouncedButton::new(btn_a, 20);
     let debounced_button_b = DebouncedButton::new(btn_b, 20);
 
-    let f1: Frame<5, 5> = Frame::<5, 5>::new(TWELVE);
-    let f2: Frame<5, 5> = Frame::<5, 5>::new(ONE);
-    let f3: Frame<5, 5> = Frame::<5, 5>::new(THREE);
-    let f4: Frame<5, 5> = Frame::<5, 5>::new(FIVE);
-    let f5: Frame<5, 5> = Frame::<5, 5>::new(SIX);
-    let f6: Frame<5, 5> = Frame::<5, 5>::new(SEVEN);
-    let f7: Frame<5, 5> = Frame::<5, 5>::new(NINE);
-    let f8: Frame<5, 5> = Frame::<5, 5>::new(ELEVEN);
-    let frames = [f1, f2, f3, f4, f5, f6, f7, f8];
-    let frame_cursor = FrameCursorCircular::<8, 5, 5>::new(&frames);
+    let frames = decode_frames::<5, 5, 5>(FRAME_BYTES);
+    let frame_cursor = FrameCursorCircular::<5, 5, 5>::new(&frames);
     {
         *(FRAME_CURSOR.lock().await) = Some(frame_cursor);
     }
