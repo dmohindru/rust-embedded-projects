@@ -32,7 +32,7 @@
 - Pressing left button will scroll text to right and the end of string it wraps around
 - Pressing right button will scroll text to left and the start of string it wraps around
 
-### Project 5
+### [Project 5](./led_matrix_project5/)
 
 **Text Scroll in clockwise and anticlock wise direction with timer**
 
