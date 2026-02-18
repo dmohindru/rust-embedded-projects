@@ -1,0 +1,24 @@
+[package]
+name = "led_matrix_project6"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+
+[dependencies]
+
+embassy-executor = { workspace = true }
+
+embassy-time = { workspace = true }
+embassy-nrf = { workspace = true }
+
+defmt = { workspace = true }
+defmt-rtt = { workspace = true }
+
+cortex-m = { workspace = true }
+cortex-m-rt = { workspace = true }
+embassy-sync = { workspace = true }
+
+panic-probe = { workspace = true }
+heapless = { workspace = true }
+common-utils = { path = "../common_utils" }
+embedded-alloc = { workspace = true }
