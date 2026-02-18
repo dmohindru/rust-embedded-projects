@@ -41,7 +41,7 @@
 - Pressing left button will toggle scroll direction between left/right
 - Pressing right button will cycle between fast to slow movement.
 
-### Project 6
+### [Project 6](./led_matrix_project6/)
 
 **Scrolling Text Animation**
 

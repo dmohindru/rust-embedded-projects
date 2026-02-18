@@ -1,0 +1,235 @@
+#![no_std]
+#![no_main]
+#![allow(static_mut_refs)]
+
+use common_utils::{
+    button::DebouncedButton,
+    display_driver::{EmbassyDelay, MicroBitLedDriver},
+    frame::{decode_frames, Direction, FrameCursorCircular},
+    utils::StepCursorCircular,
+};
+
+use embassy_executor::Spawner;
+use embassy_nrf::gpio::{Input, Output, Pull};
+use embassy_sync::{
+    blocking_mutex::raw::ThreadModeRawMutex,
+    mutex::{Mutex, MutexGuard},
+};
+use embassy_time::Timer;
+use embedded_alloc::Heap;
+use {defmt_rtt as _, panic_probe as _};
+
+#[global_allocator]
+static ALLOCATOR: Heap = Heap::empty();
+
+static FRAME_BYTES: &[u8] = include_bytes!("../assets/parth.bin");
+
+type FrameCursorType = Mutex<ThreadModeRawMutex, Option<FrameCursorCircular<30, 5, 5>>>;
+type StepCursorType = Mutex<ThreadModeRawMutex, Option<StepCursorCircular>>;
+type DirectionType = Mutex<ThreadModeRawMutex, Direction>;
+
+static FRAME_CURSOR: FrameCursorType = Mutex::new(None);
+static STEP_CURSOR: StepCursorType = Mutex::new(None);
+static DIRECTION: DirectionType = Mutex::new(Direction::Right);
+
+//--------------------
+// Led Refresh task
+//--------------------
+#[embassy_executor::task]
+async fn led_refresh_task(mut driver: MicroBitLedDriver<Output<'static>, EmbassyDelay>) {
+    loop {
+        // Read frame once per scan → lock only once
+        let frame = {
+            let frame_opt = FRAME_CURSOR.lock().await;
+            frame_opt.as_ref().unwrap().current_frame().clone()
+        };
+
+        driver.render(&frame).await;
+    }
+}
+
+//--------------------
+// Left Button Task
+//--------------------
+#[embassy_executor::task]
+async fn left_button_task(mut button: DebouncedButton) {
+    button
+        .wait(|| async {
+            {
+                let mut direction: MutexGuard<'_, ThreadModeRawMutex, Direction> =
+                    DIRECTION.lock().await;
+                *direction = direction.toggle();
+            }
+        })
+        .await;
+}
+
+//--------------------
+// Right Button Task
+//--------------------
+#[embassy_executor::task]
+async fn right_button_task(mut button: DebouncedButton) {
+    button
+        .wait(|| async {
+            {
+                let mut step_cursor_option: MutexGuard<
+                    '_,
+                    ThreadModeRawMutex,
+                    Option<StepCursorCircular>,
+                > = STEP_CURSOR.lock().await;
+                if let Some(step_cursor) = step_cursor_option.as_mut() {
+                    step_cursor.move_step(Direction::Right);
+                }
+            }
+        })
+        .await;
+}
+
+//--------------------
+// Timer Task
+//--------------------
+#[embassy_executor::task]
+async fn timer_task() {
+    {
+        loop {
+            // ---- 1. Read delay from step cursor ----
+            let delay_ms = {
+                let step_cursor_guard: MutexGuard<
+                    '_,
+                    ThreadModeRawMutex,
+                    Option<StepCursorCircular>,
+                > = STEP_CURSOR.lock().await;
+                step_cursor_guard
+                    .as_ref()
+                    .map(|cursor| cursor.current_value())
+                    .unwrap_or(2000)
+            }; // Step cursor dropped here
+
+            // ---- 2. Sleep (NO LOCKS HELD) ----
+            Timer::after_millis(delay_ms as u64).await;
+
+            // ---- 3. Read direction (copy, cheap) ----
+            let direction = {
+                let direction_guard: MutexGuard<'_, ThreadModeRawMutex, Direction> =
+                    DIRECTION.lock().await;
+                *direction_guard
+            }; // direction guard dropped here
+
+            // ---- 4. Move frame cursor ----
+            {
+                let mut frame_cursor_guard: MutexGuard<
+                    '_,
+                    ThreadModeRawMutex,
+                    Option<FrameCursorCircular<30, 5, 5>>,
+                > = FRAME_CURSOR.lock().await;
+                if let Some(frame_cursor) = frame_cursor_guard.as_mut() {
+                    frame_cursor.move_index(direction);
+                }
+            } // frame_cursor_guard dropped here
+        }
+    }
+}
+
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    // 8 KB heap — you choose the size
+    const HEAP_SIZE: usize = 8 * 1024;
+    static mut HEAP_MEM: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
+
+    unsafe {
+        ALLOCATOR.init(HEAP_MEM.as_ptr() as usize, HEAP_SIZE);
+    }
+
+    let p = embassy_nrf::init(Default::default());
+    let btn_a = Input::new(p.P0_14, Pull::Up);
+    let btn_b = Input::new(p.P0_23, Pull::Up);
+    let debounced_button_a = DebouncedButton::new(btn_a, 20);
+    let debounced_button_b = DebouncedButton::new(btn_b, 20);
+
+    let frames = decode_frames::<30, 5, 5>(FRAME_BYTES);
+    let frame_cursor = FrameCursorCircular::<30, 5, 5>::new(&frames);
+    {
+        *(FRAME_CURSOR.lock().await) = Some(frame_cursor);
+    }
+    let step_cursor = StepCursorCircular::new(2000, 500, 250, 7);
+    {
+        *(STEP_CURSOR.lock().await) = Some(step_cursor);
+    }
+
+    // -----------------
+    // LED matrix pins
+    // -----------------
+    let rows = [
+        Output::new(
+            p.P0_21,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P0_22,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P0_15,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P0_24,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P0_19,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+    ];
+
+    let cols = [
+        Output::new(
+            p.P0_28,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P0_11,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P0_31,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P1_05,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+        Output::new(
+            p.P0_30,
+            embassy_nrf::gpio::Level::High,
+            embassy_nrf::gpio::OutputDrive::Standard,
+        ),
+    ];
+
+    let delay = EmbassyDelay;
+
+    let led_driver = MicroBitLedDriver::new(rows, cols, delay);
+
+    spawner
+        .spawn(left_button_task(debounced_button_a))
+        .expect("Failed to spawn button A task");
+    spawner
+        .spawn(right_button_task(debounced_button_b))
+        .expect("Failed to spawn button B task");
+    spawner
+        .spawn(timer_task())
+        .expect("Failed to spawn timer task");
+
+    spawner
+        .spawn(led_refresh_task(led_driver))
+        .expect("Failed to spawn led refresh task");
+}
