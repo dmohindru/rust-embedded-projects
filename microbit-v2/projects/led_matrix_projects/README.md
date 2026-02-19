@@ -46,12 +46,18 @@
 **Scrolling Text Animation**
 
 - Display a scrolling text like Dhruv Mohindru
+- On a timer interrupt text is scrolled in either left or right direction as per state of left button pressed. Initial direction is right
+- Pressing left button will toggle scroll direction between left/right
+- Pressing right button will cycle between fast to slow movement.
 
 ### Project 7
 
 **Scrolling text with start/pause feature**
 
-- Touch screen button to stop/start scrolling
+- Display a scrolling text like Dhruv Mohindru
+- On a timer interrupt text is scrolled to left only if scrolling in not paused
+- Pressing left button will toggle pause on/off.
+- Pressing right button will cycle between fast to slow movement.
 
 ## Micro:bit v2 LED Matrix — Driver Concepts
 
