@@ -134,3 +134,12 @@ loop {
 
 Use this tool to generate pixel frame data
 https://dot2pic.com/
+
+## MAX7219 Concepts
+
+- microbit pins mapping
+- spi config suitable for MAX7219
+- spi config code
+- spi api code (helpful in creating test parallels)
+- Max setup commands
+- Max operating commands

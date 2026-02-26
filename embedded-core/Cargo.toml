@@ -1,0 +1,9 @@
+[package]
+name = "embedded-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+
+[dependencies]
+heapless = "0.8"
+defmt = "0.3.10"
