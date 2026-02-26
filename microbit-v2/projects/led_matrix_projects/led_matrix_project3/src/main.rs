@@ -5,8 +5,6 @@
 use common_utils::{
     button::DebouncedButton,
     display_driver::{EmbassyDelay, MicroBitLedDriver},
-    frame::{Direction, Frame, FrameCursorCircular},
-    utils::StepCursorCircular,
 };
 
 use embassy_executor::Spawner;
@@ -17,6 +15,8 @@ use embassy_sync::{
 };
 use embassy_time::Timer;
 use embedded_alloc::Heap;
+use embedded_core::cursor::StepCursorCircular;
+use embedded_core::frame::{Direction, Frame, FrameCursorCircular};
 use {defmt_rtt as _, panic_probe as _};
 
 #[global_allocator]
