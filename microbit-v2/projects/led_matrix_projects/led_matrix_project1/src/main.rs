@@ -5,7 +5,6 @@
 use common_utils::{
     button::DebouncedButton,
     display_driver::{EmbassyDelay, MicroBitLedDriver},
-    frame::{Direction, Frame, FrameCursor},
 };
 use defmt::info;
 use embassy_executor::Spawner;
@@ -16,6 +15,7 @@ use embassy_sync::{
     mutex::Mutex,
 };
 use embedded_alloc::Heap;
+use embedded_core::frame::{Direction, Frame, FrameCursor};
 use {defmt_rtt as _, panic_probe as _};
 
 #[global_allocator]

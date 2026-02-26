@@ -17,6 +17,7 @@ defmt = { workspace = true }
 embassy-nrf = { workspace = true }
 async-trait = { workspace = true }
 embassy-time = { workspace = true }
+embedded-core = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }

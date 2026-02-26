@@ -1,9 +1,9 @@
 use crate::display_driver::{AsyncDelay, OutputPin};
-use crate::frame::Frame;
 use alloc::boxed::Box;
 use async_trait::async_trait;
 use embassy_nrf::gpio::Output;
 use embassy_time::Timer;
+use embedded_core::frame::Frame;
 
 pub struct EmbassyDelay;
 
@@ -60,9 +60,9 @@ impl<P: OutputPin, D: AsyncDelay> MicroBitLedDriver<P, D> {
 mod tests {
     use super::*;
     use crate::display_driver::OutputPin as OutputPinTrait;
-    use crate::frame::Frame;
     use async_trait::async_trait;
     use core::cell::Cell;
+    use embedded_core::frame::Frame;
     use embedded_hal::digital::OutputPin;
     use embedded_hal_mock::eh1::pin::{
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
