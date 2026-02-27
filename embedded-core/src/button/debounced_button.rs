@@ -38,3 +38,34 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    struct FakeDelay;
+    impl DelayNs for FakeDelay {
+        async fn delay_ns(&mut self, ns: u32) {}
+    }
+
+    #[tokio::test]
+    async fn debounced_button_test() {
+        use embedded_hal_mock::eh1::digital::Mock as PinMock;
+        use embedded_hal_mock::eh1::digital::{Edge, State, Transaction};
+        let expectations = [
+            Transaction::wait_for_edge(Edge::Falling),
+            Transaction::get(State::High),
+            Transaction::wait_for_edge(Edge::Rising),
+        ];
+        let mock_pin = PinMock::new(&expectations);
+        let mut button = DebouncedButton::new(mock_pin, FakeDelay, 10);
+        let mut called = false;
+        button
+            .wait(|| async {
+                // called = true;
+            })
+            .await;
+
+        assert!(called);
+    }
+}
