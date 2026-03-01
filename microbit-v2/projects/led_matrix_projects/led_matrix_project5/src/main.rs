@@ -2,10 +2,7 @@
 #![no_main]
 #![allow(static_mut_refs)]
 
-use common_utils::{
-    button::DebouncedButton,
-    display_driver::{EmbassyDelay, MicroBitLedDriver},
-};
+use common_utils::display_driver::{EmbassyDelay, MicroBitLedDriver};
 
 use embassy_executor::Spawner;
 use embassy_nrf::gpio::{Input, Output, Pull};
@@ -15,6 +12,7 @@ use embassy_sync::{
 };
 use embassy_time::Timer;
 use embedded_alloc::Heap;
+use embedded_core::button::DebouncedButton;
 use embedded_core::cursor::StepCursorCircular;
 use embedded_core::frame::{decode_frames, Direction, FrameCursorCircular};
 use {defmt_rtt as _, panic_probe as _};
@@ -52,7 +50,7 @@ async fn led_refresh_task(mut driver: MicroBitLedDriver<Output<'static>, Embassy
 // Left Button Task
 //--------------------
 #[embassy_executor::task]
-async fn left_button_task(mut button: DebouncedButton) {
+async fn left_button_task(mut button: DebouncedButton<Input<'static>, embassy_time::Delay>) {
     button
         .wait(|| async {
             {
@@ -68,7 +66,7 @@ async fn left_button_task(mut button: DebouncedButton) {
 // Right Button Task
 //--------------------
 #[embassy_executor::task]
-async fn right_button_task(mut button: DebouncedButton) {
+async fn right_button_task(mut button: DebouncedButton<Input<'static>, embassy_time::Delay>) {
     button
         .wait(|| async {
             {
@@ -143,8 +141,8 @@ async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(Default::default());
     let btn_a = Input::new(p.P0_14, Pull::Up);
     let btn_b = Input::new(p.P0_23, Pull::Up);
-    let debounced_button_a = DebouncedButton::new(btn_a, 20);
-    let debounced_button_b = DebouncedButton::new(btn_b, 20);
+    let debounced_button_a = DebouncedButton::new(btn_a, embassy_time::Delay, 20);
+    let debounced_button_b = DebouncedButton::new(btn_b, embassy_time::Delay, 20);
 
     let frames = decode_frames::<5, 5, 5>(FRAME_BYTES);
     let frame_cursor = FrameCursorCircular::<5, 5, 5>::new(&frames);
