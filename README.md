@@ -1,21 +1,18 @@
 # Rust Embedded Projects
 
-This repository documents my hands-on learning path in **Embedded Rust** developing async firmware built with the [Embassy](https://embassy.dev) framework using two platforms:
+This repository documents my hands-on learning path in **Embedded Rust** developing async firmware built with the [Embassy](https://embassy.dev) framework using following platforms:
 
 - [**BBC micro:bit v2**](./microbit-v2/)
 - [**STM32F3 Discovery**](./stm32f3discovery/)
-
-Each board folder contains self-contained projects developed with a **TDD (Test-Driven Development)** approach: all logic that can run on the host is unit-tested, and hardware access is isolated in thin async tasks.
+- [**Raspberry Pi Pico**](./rpi-pico/)
 
 ## Structure
 
 ```
-microbit/
-  README.md           → index and roadmap
-  projectXX_name/     → each project with full notes, code, and tests
-stm32f3discovery/
-  README.md           → index and roadmap
-  projectXX_name/     → each project with full notes, code, and tests
+embedded-core/        → Contains generic platform independent code for various data structures and drivers
+microbit-v2/          → Contains projects specific to microbit-v2 platform
+stm32f3discovery/     → Contains projects specific to stm32 platform
+rpi-pico/             → Contains projects specific to raspberry pi pico platform
 ```
 
 ## Tools
