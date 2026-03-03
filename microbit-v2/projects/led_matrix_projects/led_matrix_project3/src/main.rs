@@ -2,8 +2,6 @@
 #![no_main]
 #![allow(static_mut_refs)]
 
-use common_utils::display_driver::{EmbassyDelay, MicroBitLedDriver};
-
 use embassy_executor::Spawner;
 use embassy_nrf::gpio::{Input, Output, Pull};
 use embassy_sync::{
@@ -14,12 +12,15 @@ use embassy_time::Timer;
 use embedded_alloc::Heap;
 use embedded_core::button::DebouncedButton;
 use embedded_core::cursor::StepCursorCircular;
+use embedded_core::display_driver::LedMatrixDriver;
 use embedded_core::frame::{Direction, Frame, FrameCursorCircular};
 use {defmt_rtt as _, panic_probe as _};
 
 #[global_allocator]
 static ALLOCATOR: Heap = Heap::empty();
 
+const LED_MATRIX_ROWS: usize = 5;
+const LED_MATRIX_COLS: usize = 5;
 const TWELVE: [u32; 5] = [0b00100, 0b00100, 0b00100, 0b00000, 0b00000];
 const ONE: [u32; 5] = [0b00001, 0b00010, 0b00100, 0b00000, 0b00000];
 const THREE: [u32; 5] = [0b00000, 0b00000, 0b00111, 0b00000, 0b00000];
@@ -41,7 +42,14 @@ static DIRECTION: DirectionType = Mutex::new(Direction::Right);
 // Led Refresh task
 //--------------------
 #[embassy_executor::task]
-async fn led_refresh_task(mut driver: MicroBitLedDriver<Output<'static>, EmbassyDelay>) {
+async fn led_refresh_task(
+    mut driver: LedMatrixDriver<
+        Output<'static>,
+        embassy_time::Delay,
+        LED_MATRIX_ROWS,
+        LED_MATRIX_COLS,
+    >,
+) {
     loop {
         // Read frame once per scan → lock only once
         let frame = {
@@ -228,9 +236,7 @@ async fn main(spawner: Spawner) {
         ),
     ];
 
-    let delay = EmbassyDelay;
-
-    let led_driver = MicroBitLedDriver::new(rows, cols, delay);
+    let led_driver = LedMatrixDriver::new(rows, cols, embassy_time::Delay);
 
     spawner
         .spawn(left_button_task(debounced_button_a))

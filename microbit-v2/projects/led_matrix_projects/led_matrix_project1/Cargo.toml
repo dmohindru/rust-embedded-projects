@@ -20,6 +20,5 @@ embassy-sync = { workspace = true }
 
 panic-probe = { workspace = true }
 heapless = { workspace = true }
-common-utils = { path = "../common_utils" }
 embedded-core = { workspace = true }
 embedded-alloc = { workspace = true }

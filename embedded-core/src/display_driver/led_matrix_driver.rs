@@ -40,7 +40,7 @@ where
                 }
             }
 
-            self.delay.delay_ms(1000).await;
+            self.delay.delay_ms(1).await;
         }
     }
 }
