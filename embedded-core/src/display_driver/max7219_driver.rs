@@ -59,6 +59,42 @@ where
     Right now every update sends 8 SPI transactions.
     Better performance would send one transaction:
     [addr,data][addr,data][addr,data]...
-    But your current design is already perfectly acceptable.
     */
+}
+
+#[cfg(test)]
+impl<D, const R: usize, const C: usize> Max7219<D, R, C>
+where
+    D: SpiDevice,
+{
+    pub fn free(self) -> D {
+        self.device
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
+
+    #[tokio::test]
+    async fn should_initialize_with_proper_commands() {
+        let expectations: [SpiTransaction<u8>; 8] = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write_vec(vec![0x0F, 0x00]),
+            SpiTransaction::write_vec(vec![0x0C, 0x00]),
+            SpiTransaction::write_vec(vec![0x09, 0x00]),
+            SpiTransaction::write_vec(vec![0x0B, 0x07]),
+            SpiTransaction::write_vec(vec![0x0A, 0x08]),
+            SpiTransaction::write_vec(vec![0x0C, 0x01]),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let spi = SpiMock::new(&expectations);
+
+        let mut max7219_device = Max7219::<_, 8, 8>::new(spi);
+        max7219_device.initialize().await.unwrap();
+
+        max7219_device.free().done();
+    }
 }
