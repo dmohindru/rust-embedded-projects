@@ -18,3 +18,32 @@ vectors in embedded world
 ### Links
 
 https://hackaday.io/page/21907-test-driven-embedded-rust-development-tutorial
+
+```text
+micro:bit       MAX7219
+
+P0.13  -------> CLK
+P0.15  -------> DIN
+P0.14  -------> CS
+3V     -------> VCC
+GND    -------> GND
+```
+
+micro:bit MAX7219
+
+P0.13 → CLK
+P0.15 → DIN
+P0.12 → CS
+3V → VCC
+GND → GND
+
+7. Practical rule
+
+When using Embassy async drivers on nRF52:
+SPI → use SPI3
+I2C → use TWIM
+UART → use UARTE
+
+Basically:
+
+Always prefer the DMA-enabled peripherals.

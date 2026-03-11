@@ -22,3 +22,6 @@ panic-probe = { workspace = true }
 heapless = { workspace = true }
 embedded-alloc = { workspace = true }
 embedded-core = { workspace = true }
+
+embassy-embedded-hal = { workspace = true }
+static_cell = { workspace = true }
