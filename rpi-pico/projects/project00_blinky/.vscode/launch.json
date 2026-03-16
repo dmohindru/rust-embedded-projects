@@ -6,15 +6,23 @@
       "type": "probe-rs-debug",
       "request": "launch",
       "preLaunchTask": "Build Debug",
+      "chip": "rp2040",
+      "connectUnderReset": false,
+      "speed": 4000,
       "flashingConfig": {
         "flashingEnabled": true
       },
-      "chip": "RP2040",
       "coreConfigs": [
         {
-          "programBinary": "${workspaceFolder}/../../target/thumbv6m-none-eabi/debug/${workspaceFolderBasename}"
+          "coreIndex": 0,
+          "programBinary": "${workspaceFolder}/../../target/thumbv6m-none-eabi/debug/${workspaceFolderBasename}",
+          "svdFile": "${workspaceFolder}/../../rp2040.svd",
+          "rttEnabled": true
         }
-      ]
+      ],
+      "consoleLogLevel": "Info", //Error, Warn, Info, Debug, Trace
+      "wireProtocol": "Swd",
+      "stopOnEntry": true
     }
   ]
 }

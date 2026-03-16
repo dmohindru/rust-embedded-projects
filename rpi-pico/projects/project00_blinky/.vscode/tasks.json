@@ -13,7 +13,7 @@
     {
       "label": "Build Debug",
       "type": "shell",
-      "command": "cargo build --target thumbv6m-none-eabi",
+      "command": "cargo build",
       "group": {
         "kind": "build",
         "isDefault": true
@@ -27,7 +27,7 @@
     {
       "label": "Build Release",
       "type": "shell",
-      "command": "cargo build --target thumbv6m-none-eabi --release",
+      "command": "cargo build --release",
       "group": "build",
       "problemMatcher": ["$rustc"],
       "presentation": {
@@ -38,7 +38,7 @@
     {
       "label": "Flash Debug",
       "type": "shell",
-      "command": "cargo run --target thumbv6m-none-eabi",
+      "command": "cargo run",
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -48,7 +48,7 @@
     {
       "label": "Flash Release",
       "type": "shell",
-      "command": "cargo run --target thumbv6m-none-eabi --release",
+      "command": "cargo run --release",
       "group": "test",
       "presentation": {
         "reveal": "always",
