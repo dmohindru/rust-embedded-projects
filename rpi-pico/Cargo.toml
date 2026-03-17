@@ -1,0 +1,42 @@
+[workspace]
+members = ["projects/project00_blinky"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.83"
+
+[workspace.dependencies]
+cortex-m = { version = "0.7.6", features = ["inline-asm"] }
+cortex-m-rt = "0.7.0"
+
+defmt = "1.0.1"
+defmt-rtt = "1.0.0"
+
+embassy-executor = { version = "0.9.0", features = [
+    "arch-cortex-m",
+    "executor-thread",
+    "executor-interrupt",
+    "defmt",
+] }
+embassy-embedded-hal = "0.5.0"
+embassy-rp = { version = "0.9.0", features = [
+    "defmt",
+    "unstable-pac",
+    "time-driver",
+    "critical-section-impl",
+    "rp2040",
+] }
+embassy-time = { version = "0.5.0", features = [
+    "defmt",
+    "defmt-timestamp-uptime",
+] }
+embassy-sync = { version = "0.7.2", features = ["defmt"] }
+embedded-alloc = "0.7"
+static_cell = "2.1.1"
+heapless = "0.9.2"
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+embedded-core = { path = "../embedded-core" }
+
+[profile.release]
+debug = 2
