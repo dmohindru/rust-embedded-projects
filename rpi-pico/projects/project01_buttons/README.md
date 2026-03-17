@@ -1,8 +1,12 @@
-## Blinky
+## Introduction
 
-A classic embedded world hello world program. **This project would act as a starter project for embassy rpi framework.**
+Example project to demonstrate using button to receive inputs.
 
 ## Features
 
-- Blinks onboard led every 1 sec
-- Logs to console led on!/led off! every 1 second alternatively
+There would be
+
+- A global state protected by mutex storing what last button was pressed.
+- Two debounced buttons lets call A and B.
+- A global state would store values either "Button A" or "Button B" which would be set by pressing button A and button B respectively.
+- A periodic task which prints the current value of global state to console.

@@ -30,3 +30,4 @@ ln -s $PICO_ROOT_DIR/.cargo .cargo
 ## Projects
 
 1.  **[Blinky](./projects/project00_blinky/):** Classic embedded hello world program.
+2.  **[Buttons](./projects/project01_buttons/):** Example of using buttons

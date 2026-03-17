@@ -1,24 +1,18 @@
 #![no_std]
 #![no_main]
 
-use defmt::*;
 use embassy_executor::Spawner;
-use embassy_rp::gpio::{Level, Output};
-use embassy_time::Timer;
+use embassy_rp::gpio::{Input, Pull};
+use embassy_time::Delay;
+use embedded_core::button::DebouncedButton;
 use {defmt_rtt as _, panic_probe as _};
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
-    let mut led = Output::new(p.PIN_25, Level::Low);
 
-    loop {
-        info!("from project 1led on!");
-        led.set_high();
-        Timer::after_secs(1).await;
-
-        info!("from project 1led off!");
-        led.set_low();
-        Timer::after_secs(1).await;
-    }
+    let btn_a = Input::new(p.PIN_15, Pull::Up);
+    let btn_b = Input::new(p.PIN_16, Pull::Up);
+    let debounced_btn_a = DebouncedButton::new(btn_a, Delay, 20);
+    let debounced_btn_b = DebouncedButton::new(btn_b, Delay, 20);
 }
