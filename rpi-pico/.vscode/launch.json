@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Raspberry Pi Pico Debug",
+      "name": "RPI Pico Debug",
       "type": "probe-rs-debug",
       "request": "launch",
       "preLaunchTask": "Build Debug",
@@ -15,8 +15,8 @@
       "coreConfigs": [
         {
           "coreIndex": 0,
-          "programBinary": "${workspaceFolder}/../../target/thumbv6m-none-eabi/debug/${workspaceFolderBasename}",
-          "svdFile": "${workspaceFolder}/../../rp2040.svd",
+          "programBinary": "${env:PICO_ROOT_DIR}/target/thumbv6m-none-eabi/debug/${workspaceFolderBasename}",
+          "svdFile": "${env:PICO_ROOT_DIR}/rp2040.svd",
           "rttEnabled": true
         }
       ],
