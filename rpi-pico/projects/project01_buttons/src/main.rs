@@ -36,7 +36,7 @@ async fn log_button_state_task() {
                 Direction::Right => info!("Right button pressed"),
             },
         }
-        Timer::after_secs(1).await;
+        Timer::after_secs(2).await;
     }
 }
 
