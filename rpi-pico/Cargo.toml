@@ -1,5 +1,9 @@
 [workspace]
-members = ["projects/project00_blinky", "projects/project01_buttons"]
+members = [
+    "projects/project00_blinky",
+    "projects/project01_buttons",
+    "projects/project02_max7219",
+]
 resolver = "2"
 
 [workspace.package]
