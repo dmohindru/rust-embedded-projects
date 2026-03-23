@@ -13,24 +13,21 @@ use embassy_sync::mutex::Mutex;
 use embassy_time::{Delay, Timer};
 use embedded_core::button::DebouncedButton;
 use embedded_core::display_driver::Max7219;
-use embedded_core::frame::{decode_frames, Direction, Frame, FrameCursorCircular};
+use embedded_core::frame::{decode_frames, Direction, FrameCursorCircular};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
+static FRAME_BYTES: &[u8] = include_bytes!("../assets/poonam.bin");
+const NUM_FRAMES: usize = 6;
+
 const LED_MATRIX_ROWS: usize = 8;
 const LED_MATRIX_COLS: usize = 8;
-static CHANNEL: Channel<ThreadModeRawMutex, Direction, 2> = Channel::new();
-
-type FrameCursorType =
-    Mutex<ThreadModeRawMutex, Option<FrameCursorCircular<6, LED_MATRIX_ROWS, LED_MATRIX_COLS>>>;
-static FRAME_CURSOR: FrameCursorType = Mutex::new(None);
-
-static FRAME_BYTES: &[u8] = include_bytes!("../assets/poonam.bin");
+const CHANNEL_SIZE: usize = 2;
+static CHANNEL: Channel<ThreadModeRawMutex, Direction, CHANNEL_SIZE> = Channel::new();
 
 // SPI type
 type MySpi = Spi<'static, SPI0, Async>;
 
-// TODO: Research between ThreadModeRawMutex and NoopRawMutex
 // SPI + CS shared container
 static SPI_BUS: StaticCell<Mutex<ThreadModeRawMutex, MySpi>> = StaticCell::new();
 
@@ -40,24 +37,12 @@ type Max7219Device = SpiDevice<'static, ThreadModeRawMutex, MySpi, Output<'stati
 // Display Driver type
 type DisplayDriver = Max7219<Max7219Device, LED_MATRIX_ROWS, LED_MATRIX_COLS>;
 
-#[embassy_executor::task]
-async fn spi_init_task(mut spi_device: Max7219<Max7219Device, 8, 8>) {
-    let frame_data: [u32; 8] = [0xF0, 0x0F, 0xE0, 0x0E, 0xD0, 0x0D, 0xC0, 0x0C];
-    let frame: Frame<8, 8> = Frame::new(frame_data);
-
-    loop {
-        spi_device.write_bitmap(&frame).await.unwrap();
-        info!("Frame data written");
-        Timer::after_secs(5).await;
-    }
-}
-
 //--------------------
 // Button Sender Task
 //--------------------
 #[embassy_executor::task(pool_size = 2)]
 async fn button_sender_task(
-    sender: Sender<'static, ThreadModeRawMutex, Direction, 2>,
+    sender: Sender<'static, ThreadModeRawMutex, Direction, CHANNEL_SIZE>,
     mut button: DebouncedButton<Input<'static>, Delay>,
     direction: Direction,
 ) {
@@ -73,21 +58,15 @@ async fn button_sender_task(
 //--------------------
 #[embassy_executor::task]
 async fn receiver_task(
-    receiver: Receiver<'static, ThreadModeRawMutex, Direction, 2>,
+    receiver: Receiver<'static, ThreadModeRawMutex, Direction, CHANNEL_SIZE>,
     mut display_driver: DisplayDriver,
+    mut frame_cursor: FrameCursorCircular<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>,
 ) {
     loop {
         let direction = receiver.receive().await;
         info!("Received direction: {}", direction);
-        let frame = {
-            let mut frame_data_option = FRAME_CURSOR.lock().await;
-            if let Some(frame_data) = frame_data_option.as_mut() {
-                frame_data.move_index(direction);
-                frame_data.current_frame().clone()
-            } else {
-                continue;
-            }
-        };
+        frame_cursor.move_index(direction);
+        let frame = frame_cursor.current_frame();
         display_driver.write_bitmap(&frame).await.unwrap();
     }
 }
@@ -133,20 +112,15 @@ async fn main(spawner: Spawner) {
     //--------Frame Data-----------
     let frames = decode_frames::<6, LED_MATRIX_ROWS, LED_MATRIX_COLS>(FRAME_BYTES);
     let frame_cursor = FrameCursorCircular::new(&frames);
-    //--------Frame Data Ends-----------
 
     driver.initialize().await.unwrap();
     info!("Initialization commands written");
     Timer::after_millis(100).await;
-    // TODO: Check if its safe to use frame_cursor here without a mutex
+
     driver
         .write_bitmap(frame_cursor.current_frame())
         .await
         .unwrap();
-    // Set mutex to be used for other tasks
-    {
-        *(FRAME_CURSOR.lock().await) = Some(frame_cursor);
-    }
 
     let sender_a = CHANNEL.sender();
     let sender_b = CHANNEL.sender();
@@ -169,6 +143,6 @@ async fn main(spawner: Spawner) {
         .expect("Failed to spawn right button task");
 
     spawner
-        .spawn(receiver_task(receiver, driver))
+        .spawn(receiver_task(receiver, driver, frame_cursor))
         .expect("Failed to spawn receiver task");
 }
