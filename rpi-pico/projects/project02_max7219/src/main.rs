@@ -17,8 +17,8 @@ use embedded_core::frame::{decode_frames, Direction, FrameCursorCircular};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
-static FRAME_BYTES: &[u8] = include_bytes!("../assets/poonam.bin");
-const NUM_FRAMES: usize = 6;
+static FRAME_BYTES: &[u8] = include_bytes!("../assets/parth.bin");
+const NUM_FRAMES: usize = 5;
 
 const LED_MATRIX_ROWS: usize = 8;
 const LED_MATRIX_COLS: usize = 8;
@@ -110,7 +110,7 @@ async fn main(spawner: Spawner) {
     let debounced_right_btn = DebouncedButton::new(right_btn, Delay, 20);
 
     //--------Frame Data-----------
-    let frames = decode_frames::<6, LED_MATRIX_ROWS, LED_MATRIX_COLS>(FRAME_BYTES);
+    let frames = decode_frames::<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>(FRAME_BYTES);
     let frame_cursor = FrameCursorCircular::new(&frames);
 
     driver.initialize().await.unwrap();
