@@ -29,5 +29,23 @@ ln -s $PICO_ROOT_DIR/.cargo .cargo
 
 ## Projects
 
-1.  **[Blinky](./projects/project00_blinky/):** Classic embedded hello world program.
-2.  **[Buttons](./projects/project01_buttons/):** Example of using buttons
+1. **[Blinky](./projects/project00_blinky/):** Classic embedded hello world program.
+2. **[Buttons](./projects/project01_buttons/):** Example of using buttons
+3. **[Max7219](./projects/project02_max7219/):** Max7219 driver example
+
+## Useful commands
+
+**Probe-rs verification commands**
+
+```sh
+# Check if probe-rs detects the probe
+probe-rs list
+# Check if the target (RP2040) is reachable
+probe-rs info --chip RP2040
+# Try connecting with probe-rs-cli
+probe-rs attach --chip RP2040
+# Open a debug REPL
+probe-rs debug --chip RP2040
+# Very useful command when debugging connection issues:
+probe-rs info --probe
+```

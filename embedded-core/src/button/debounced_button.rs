@@ -30,7 +30,7 @@ where
         }
     }
 
-    async fn wait_once<F, Fut>(&mut self, on_press: &mut F)
+    pub async fn wait_once<F, Fut>(&mut self, on_press: &mut F)
     where
         F: FnMut() -> Fut,
         Fut: core::future::Future<Output = ()>,
