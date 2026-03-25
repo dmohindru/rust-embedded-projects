@@ -18,13 +18,13 @@ use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
 /*
-daksh.bin --> daksh, num frames: 13
-parth.bin --> parth, num frames: 13
-dhruv.bin --> dhruv, num frames: 13
-poonam.bin --> poonam, num frames: 22
+daksh.bin --> daksh, num frames: 45
+parth.bin --> parth, num frames: 45
+dhruv.bin --> dhruv, num frames: 45
+poonam.bin --> poonam, num frames: 54
 */
-static FRAME_BYTES: &[u8] = include_bytes!("../assets/daksh.bin");
-const NUM_FRAMES: usize = 13;
+static FRAME_BYTES: &[u8] = include_bytes!("../assets/poonam.bin");
+const NUM_FRAMES: usize = 54;
 
 const LED_MATRIX_ROWS: usize = 8;
 const LED_MATRIX_COLS: usize = 8;
