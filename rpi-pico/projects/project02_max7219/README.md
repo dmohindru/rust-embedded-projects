@@ -4,12 +4,12 @@ Example project to demonstrate using button to receive inputs.
 
 ## Features
 
-There would be
+There example features
 
-- A global state protected by mutex storing what last button was pressed.
-- Two debounced buttons lets call A and B.
-- A global state would store values either "Button A" or "Button B" which would be set by pressing button A and button B respectively.
-- A periodic task which prints the current value of global state to console.
+- Two debounced buttons left and right.
+- Max7219 led matrix display displaying single character of a string
+- Pressing left button will scroll the text in left direction, wrapping to last character on reaching first char.
+- Pressing right button will scroll the text in right direction, wrapping to first character on reaching last char.
 
 ## Mental model
 
