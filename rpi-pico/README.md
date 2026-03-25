@@ -32,6 +32,7 @@ ln -s $PICO_ROOT_DIR/.cargo .cargo
 1. **[Blinky](./projects/project00_blinky/):** Classic embedded hello world program.
 2. **[Buttons](./projects/project01_buttons/):** Example of using buttons
 3. **[Max7219](./projects/project02_max7219/):** Max7219 driver example
+4. **[Max7219 Scroll](./projects/project03_max7219_scroll//):** Max7219 driver example with scrolling text
 
 ## Useful commands
 
