@@ -8,10 +8,10 @@ use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::peripherals::SPI0;
 use embassy_rp::spi::{Async, Config, Spi};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
-use embassy_sync::channel::{Channel, Receiver, Sender};
-use embassy_sync::mutex::Mutex;
+use embassy_sync::mutex::{Mutex, MutexGuard};
 use embassy_time::{Delay, Timer};
 use embedded_core::button::DebouncedButton;
+use embedded_core::cursor::StepCursorCircular;
 use embedded_core::display_driver::Max7219;
 use embedded_core::frame::{decode_frames, Direction, FrameCursorCircular};
 use static_cell::StaticCell;
@@ -28,8 +28,9 @@ const NUM_FRAMES: usize = 54;
 
 const LED_MATRIX_ROWS: usize = 8;
 const LED_MATRIX_COLS: usize = 8;
-const CHANNEL_SIZE: usize = 2;
-static CHANNEL: Channel<ThreadModeRawMutex, Direction, CHANNEL_SIZE> = Channel::new();
+
+static DIRECTION: Mutex<ThreadModeRawMutex, Direction> = Mutex::new(Direction::Right);
+static STEP_CURSOR: StaticCell<Mutex<ThreadModeRawMutex, StepCursorCircular>> = StaticCell::new();
 
 // SPI type
 type MySpi = Spi<'static, SPI0, Async>;
@@ -44,34 +45,74 @@ type Max7219Device = SpiDevice<'static, ThreadModeRawMutex, MySpi, Output<'stati
 type DisplayDriver = Max7219<Max7219Device, LED_MATRIX_ROWS, LED_MATRIX_COLS>;
 
 //--------------------
-// Button Sender Task
+// Left Button Task
 //--------------------
-#[embassy_executor::task(pool_size = 2)]
-async fn button_sender_task(
-    sender: Sender<'static, ThreadModeRawMutex, Direction, CHANNEL_SIZE>,
-    mut button: DebouncedButton<Input<'static>, Delay>,
-    direction: Direction,
-) {
+#[embassy_executor::task]
+async fn left_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
     button
         .wait(|| async {
-            sender.send(direction).await;
+            {
+                info!("Left button pressed");
+                let mut direction: MutexGuard<'_, ThreadModeRawMutex, Direction> =
+                    DIRECTION.lock().await;
+                *direction = direction.toggle();
+            }
         })
         .await;
 }
 
 //--------------------
-// Receiver Task
+// Right Button Task
 //--------------------
 #[embassy_executor::task]
-async fn receiver_task(
-    receiver: Receiver<'static, ThreadModeRawMutex, Direction, CHANNEL_SIZE>,
+async fn right_button_task(
+    mut button: DebouncedButton<Input<'static>, Delay>,
+    cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
+) {
+    button
+        .wait(|| async {
+            {
+                info!("Right button pressed");
+                let mut step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
+                    cursor_mutex.lock().await;
+                step_cursor.move_step(Direction::Right);
+            }
+        })
+        .await;
+}
+
+//--------------------
+// Timer Task
+//--------------------
+#[embassy_executor::task]
+async fn timer_task(
     mut display_driver: DisplayDriver,
     mut frame_cursor: FrameCursorCircular<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>,
+    step_cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
 ) {
     loop {
-        let direction = receiver.receive().await;
-        info!("Received direction: {}", direction);
+        // ---- 1. Read delay from step cursor ----
+        let delay_ms = {
+            let step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
+                step_cursor_mutex.lock().await;
+            step_cursor.current_value()
+        };
+
+        // ---- 2. Sleep (NO LOCKS HELD) ----
+        Timer::after_millis(delay_ms as u64).await;
+        info!("Running                                                                                timer task");
+
+        // ---- 3. Read direction from mutex ----
+        let direction = {
+            let direction_guard: MutexGuard<'static, ThreadModeRawMutex, Direction> =
+                DIRECTION.lock().await;
+            *direction_guard
+        };
+
+        // ---- 4. Move the frame cursor ----
         frame_cursor.move_index(direction);
+
+        // ---- 5. Render frame ----
         let frame = frame_cursor.current_frame();
         display_driver.write_bitmap(&frame).await.unwrap();
     }
@@ -123,32 +164,23 @@ async fn main(spawner: Spawner) {
     info!("Initialization commands written");
     Timer::after_millis(100).await;
 
+    let step_cursor = StepCursorCircular::new(2000, 500, 250, 7);
+    let step_cursor_mutex = STEP_CURSOR.init(Mutex::new(step_cursor));
+
     driver
         .write_bitmap(frame_cursor.current_frame())
         .await
         .unwrap();
 
-    let sender_a = CHANNEL.sender();
-    let sender_b = CHANNEL.sender();
-    let receiver = CHANNEL.receiver();
-
     spawner
-        .spawn(button_sender_task(
-            sender_a,
-            debounced_left_btn,
-            Direction::Left,
-        ))
+        .spawn(left_button_task(debounced_left_btn))
         .expect("Failed to spawn left button task");
 
     spawner
-        .spawn(button_sender_task(
-            sender_b,
-            debounced_right_btn,
-            Direction::Right,
-        ))
+        .spawn(right_button_task(debounced_right_btn, step_cursor_mutex))
         .expect("Failed to spawn right button task");
 
     spawner
-        .spawn(receiver_task(receiver, driver, frame_cursor))
+        .spawn(timer_task(driver, frame_cursor, step_cursor_mutex))
         .expect("Failed to spawn receiver task");
 }
