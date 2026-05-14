@@ -92,6 +92,80 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use embedded_hal_mock::eh1::digital::{
+        Mock as PinMock, State as PinState, Transaction as PinTransaction,
+    };
+    use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
+
     #[test]
-    fn hello_test() {}
+    fn should_create_new_instance_initialize_properly() {
+        let mut latch_pin = PinMock::new(&[PinTransaction::set(PinState::Low)]);
+        let mut output_enable_pin = PinMock::new(&[PinTransaction::set(PinState::Low)]);
+        let mut register_clear_pin = PinMock::new(&[PinTransaction::set(PinState::High)]);
+
+        latch_pin.done();
+        output_enable_pin.done();
+        register_clear_pin.done();
+    }
+
+    #[test]
+    fn should_return_error_during_initialize_for_latch_pin_error() {
+        todo!()
+    }
+
+    #[test]
+    fn should_return_error_during_initialize_for_output_enable_pin_error() {
+        todo!()
+    }
+
+    #[test]
+    fn should_return_error_during_initialize_for_register_clear_pin_error() {
+        todo!()
+    }
+
+    #[test]
+    fn should_write_data_hc595_chip() {
+        todo!()
+    }
+
+    #[test]
+    fn should_return_error_for_spi_error_during_write_ops() {
+        todo!()
+    }
+
+    #[test]
+    fn should_return_error_for_pin_error_during_write_ops() {
+        todo!()
+    }
+
+    #[test]
+    fn should_enable_output_for_hc595_chip() {
+        todo!()
+    }
+
+    #[test]
+    fn should_return_error_for_enable_ops_for_output_enable_pin_error() {
+        todo!()
+    }
+
+    #[test]
+    fn should_disable_output_for_hc595_chip() {
+        todo!()
+    }
+
+    #[test]
+    fn should_return_error_for_disable_ops_for_output_enable_pin_error() {
+        todo!()
+    }
+
+    #[test]
+    fn should_clear_output_for_hc595_chip() {
+        todo!()
+    }
+
+    #[test]
+    fn should_return_error_for_clear_ops_for_register_clear_pin_error() {
+        todo!()
+    }
 }
