@@ -13,11 +13,26 @@ OE      -> Driver handled
 */
 
 #[derive(Debug)]
-pub enum Error<SpiDevice, Pin> {
-    Spi(SpiDevice),
-    LatchPin { device: SpiDevice, pin: Pin },
-    OutputEnablePin { device: SpiDevice, pin: Pin },
-    RegisterClearPin { device: SpiDevice, pin: Pin },
+pub enum Error<Spi, SpiError, Pin, PinError> {
+    SpiError {
+        error: SpiError,
+        device: Spi,
+    },
+    LatchPinError {
+        error: PinError,
+        device: Spi,
+        pin: Pin,
+    },
+    OutputEnablePinError {
+        error: PinError,
+        device: Spi,
+        pin: Pin,
+    },
+    RegisterClearPinError {
+        error: PinError,
+        device: Spi,
+        pin: Pin,
+    },
 }
 
 pub struct Hc595<SPI, PIN, const N: usize>
@@ -41,15 +56,21 @@ where
         mut latch: PIN,
         mut output_enable: Option<PIN>,
         mut register_clear: Option<PIN>,
-    ) -> Result<Self, Error<SPI, PIN>> {
+    ) -> Result<Self, Error<SPI, SPI::Error, PIN, PIN::Error>> {
         match latch.set_low() {
             Ok(_) => {}
-            Err(_) => return Err(Error::LatchPin { device, pin: latch }),
+            Err(error) => {
+                return Err(Error::LatchPinError {
+                    error,
+                    device,
+                    pin: latch,
+                })
+            }
         }
         if let Some(mut pin) = output_enable.take() {
             match pin.set_low() {
                 Ok(_) => {}
-                Err(_) => return Err(Error::OutputEnablePin { device, pin }),
+                Err(error) => return Err(Error::OutputEnablePinError { error, device, pin }),
             }
             output_enable = Some(pin);
         }
@@ -57,7 +78,7 @@ where
         if let Some(mut pin) = register_clear.take() {
             match pin.set_high() {
                 Ok(_) => {}
-                Err(_) => return Err(Error::RegisterClearPin { device, pin }),
+                Err(error) => return Err(Error::RegisterClearPinError { error, device, pin }),
             }
             register_clear = Some(pin);
         }
@@ -163,7 +184,8 @@ mod tests {
         let hc595_result = Hc595::<_, _, 1>::new(spi, latch_pin, None, None);
         assert!(hc595_result.is_err());
         match hc595_result {
-            Err(Error::LatchPin {
+            Err(Error::LatchPinError {
+                error: _,
                 mut device,
                 mut pin,
             }) => {
