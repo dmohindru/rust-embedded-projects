@@ -13,9 +13,11 @@ OE      -> Driver handled
 */
 
 #[derive(Debug)]
-pub enum Error<SpiError, PinError> {
-    Spi(SpiError),
-    Pin(PinError),
+pub enum Error<SpiDevice, Pin> {
+    Spi(SpiDevice),
+    LatchPin { device: SpiDevice, pin: Pin },
+    OutputEnablePin { device: SpiDevice, pin: Pin },
+    RegisterClearPin { device: SpiDevice, pin: Pin },
 }
 
 pub struct Hc595<SPI, PIN, const N: usize>
@@ -39,14 +41,25 @@ where
         mut latch: PIN,
         mut output_enable: Option<PIN>,
         mut register_clear: Option<PIN>,
-    ) -> Result<Self, Error<SPI::Error, PIN::Error>> {
-        latch.set_low().map_err(Error::Pin)?;
-        if let Some(pin) = output_enable.as_mut() {
-            pin.set_low().map_err(Error::Pin)?;
+    ) -> Result<Self, Error<SPI, PIN>> {
+        match latch.set_low() {
+            Ok(_) => {}
+            Err(_) => return Err(Error::LatchPin { device, pin: latch }),
+        }
+        if let Some(mut pin) = output_enable.take() {
+            match pin.set_low() {
+                Ok(_) => {}
+                Err(_) => return Err(Error::OutputEnablePin { device, pin }),
+            }
+            output_enable = Some(pin);
         }
 
-        if let Some(pin) = register_clear.as_mut() {
-            pin.set_high().map_err(Error::Pin)?;
+        if let Some(mut pin) = register_clear.take() {
+            match pin.set_high() {
+                Ok(_) => {}
+                Err(_) => return Err(Error::RegisterClearPin { device, pin }),
+            }
+            register_clear = Some(pin);
         }
 
         Ok(Hc595 {
@@ -57,38 +70,38 @@ where
         })
     }
 
-    pub async fn write(&mut self, data: &[u8; N]) -> Result<(), Error<SPI::Error, PIN::Error>> {
-        self.device.write(data).await.map_err(Error::Spi)?;
-        self.latch.set_high().map_err(Error::Pin)?;
-        self.latch.set_low().map_err(Error::Pin)?;
-        Ok(())
-    }
+    // pub async fn write(&mut self, data: &[u8; N]) -> Result<(), Error<SPI::Error, PIN::Error>> {
+    //     self.device.write(data).await.map_err(Error::Spi)?;
+    //     self.latch.set_high().map_err(Error::Pin)?;
+    //     self.latch.set_low().map_err(Error::Pin)?;
+    //     Ok(())
+    // }
 
-    pub fn enable(&mut self) -> Result<(), Error<SPI::Error, PIN::Error>> {
-        if let Some(pin) = self.output_enable.as_mut() {
-            pin.set_low().map_err(Error::Pin)?;
-        }
-        Ok(())
-    }
+    // pub fn enable(&mut self) -> Result<(), Error<SPI::Error, PIN::Error>> {
+    //     if let Some(pin) = self.output_enable.as_mut() {
+    //         pin.set_low().map_err(Error::Pin)?;
+    //     }
+    //     Ok(())
+    // }
 
-    pub fn disable(&mut self) -> Result<(), Error<SPI::Error, PIN::Error>> {
-        if let Some(pin) = self.output_enable.as_mut() {
-            pin.set_high().map_err(Error::Pin)?;
-        }
-        Ok(())
-    }
+    // pub fn disable(&mut self) -> Result<(), Error<SPI::Error, PIN::Error>> {
+    //     if let Some(pin) = self.output_enable.as_mut() {
+    //         pin.set_high().map_err(Error::Pin)?;
+    //     }
+    //     Ok(())
+    // }
 
-    pub fn clear(&mut self) -> Result<(), Error<SPI::Error, PIN::Error>> {
-        if let Some(pin) = self.register_clear.as_mut() {
-            pin.set_low().map_err(Error::Pin)?;
-            pin.set_high().map_err(Error::Pin)?;
-        }
+    // pub fn clear(&mut self) -> Result<(), Error<SPI::Error, PIN::Error>> {
+    //     if let Some(pin) = self.register_clear.as_mut() {
+    //         pin.set_low().map_err(Error::Pin)?;
+    //         pin.set_high().map_err(Error::Pin)?;
+    //     }
 
-        self.latch.set_high().map_err(Error::Pin)?;
-        self.latch.set_low().map_err(Error::Pin)?;
+    //     self.latch.set_high().map_err(Error::Pin)?;
+    //     self.latch.set_low().map_err(Error::Pin)?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 }
 
 #[cfg(test)]
@@ -147,8 +160,18 @@ mod tests {
             PinTransaction::set(PinState::Low).with_error(MockError::Io(ErrorKind::Other))
         ]);
         let spi: Generic<SpiTransaction<u8>> = SpiMock::new(&[]);
-        let hc595 = Hc595::<_, _, 1>::new(spi, latch_pin, None, None);
-        assert!(hc595.is_err());
+        let hc595_result = Hc595::<_, _, 1>::new(spi, latch_pin, None, None);
+        assert!(hc595_result.is_err());
+        match hc595_result {
+            Err(Error::LatchPin {
+                mut device,
+                mut pin,
+            }) => {
+                device.done();
+                pin.done();
+            }
+            _ => panic!("Expected LatchPin error"),
+        }
     }
 
     #[test]
