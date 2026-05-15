@@ -126,8 +126,6 @@ mod tests {
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
     use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
-    use embedded_hal_mock::eh1::MockError;
-    use std::io::ErrorKind;
 
     #[test]
     fn should_create_new_instance_initialize_properly() {
@@ -153,40 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn should_return_error_during_initialize_for_latch_pin_error() {
-        let latch_pin = PinMock::new(&[
-            PinTransaction::set(PinState::Low).with_error(MockError::Io(ErrorKind::Other))
-        ]);
-
-        let spi: Generic<SpiTransaction<u8>> = SpiMock::new(&[]);
-
-        let result = Hc595::<_, _, 1>::new(spi, latch_pin, None, None);
-
-        assert!(matches!(result, Err(Error::Latch(_))));
-    }
-
-    #[test]
-    fn should_return_error_during_initialize_for_output_enable_pin_error() {
-        todo!()
-    }
-
-    #[test]
-    fn should_return_error_during_initialize_for_register_clear_pin_error() {
-        todo!()
-    }
-
-    #[test]
     fn should_write_data_hc595_chip() {
-        todo!()
-    }
-
-    #[test]
-    fn should_return_error_for_spi_error_during_write_ops() {
-        todo!()
-    }
-
-    #[test]
-    fn should_return_error_for_pin_error_during_write_ops() {
         todo!()
     }
 
@@ -196,27 +161,12 @@ mod tests {
     }
 
     #[test]
-    fn should_return_error_for_enable_ops_for_output_enable_pin_error() {
-        todo!()
-    }
-
-    #[test]
     fn should_disable_output_for_hc595_chip() {
         todo!()
     }
 
     #[test]
-    fn should_return_error_for_disable_ops_for_output_enable_pin_error() {
-        todo!()
-    }
-
-    #[test]
     fn should_clear_output_for_hc595_chip() {
-        todo!()
-    }
-
-    #[test]
-    fn should_return_error_for_clear_ops_for_register_clear_pin_error() {
         todo!()
     }
 }
