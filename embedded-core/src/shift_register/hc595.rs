@@ -120,6 +120,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::io;
+
     use super::*;
     use embedded_hal_mock::common::Generic;
     use embedded_hal_mock::eh1::digital::{
@@ -192,12 +194,37 @@ mod tests {
 
     #[test]
     fn should_return_error_for_spi_error_during_write_ops() {
-        todo!()
+        /*
+        TODO: figure out how to simulate spi write error
+        */
     }
 
-    #[test]
-    fn should_return_error_for_pin_error_during_write_ops() {
-        todo!()
+    #[tokio::test]
+    async fn should_return_error_for_pin_error_during_write_ops() {
+        let latch_pin_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High).with_error(MockError::Io(io::ErrorKind::Other)),
+        ];
+
+        let spi_transactions = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write_vec(vec![0x01_u8, 0x02_u8]),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let mut hc595 = setup_hc595(&spi_transactions, &latch_pin_transactions, None, None);
+        let result = hc595.write(&[0x01_u8, 0x02_u8]).await;
+        assert!(result.is_err());
+
+        match result.unwrap_err() {
+            Error::Latch(_) => {}
+            _ => {
+                panic!("Expected LatchError")
+            }
+        }
+        let mut hc595 = hc595.free();
+        hc595.device.done();
+        hc595.latch.done();
     }
 
     #[test]
@@ -225,7 +252,35 @@ mod tests {
     }
 
     #[test]
-    fn should_return_error_for_enable_ops_for_output_enable_pin_error() {}
+    fn should_return_error_for_enable_ops_for_output_enable_pin_error() {
+        let latch_pin_transactions = [PinTransaction::set(PinState::Low)];
+        let oe_pin_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low).with_error(MockError::Io(io::ErrorKind::Other)),
+        ];
+        let spi_transactions: &[SpiTransaction<u8>] = &[];
+
+        let mut hc595 = setup_hc595(
+            &spi_transactions,
+            &latch_pin_transactions,
+            Some(&oe_pin_transactions),
+            None,
+        );
+
+        let result = hc595.enable();
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            Error::OutputEnable(_) => {}
+            _ => {
+                panic!("Expected OutputEnable error")
+            }
+        }
+
+        let mut hc595 = hc595.free();
+        hc595.device.done();
+        hc595.latch.done();
+        hc595.output_enable.unwrap().done();
+    }
 
     #[test]
     fn should_disable_output_for_hc595_chip() {
@@ -253,7 +308,33 @@ mod tests {
 
     #[test]
     fn should_return_error_for_disable_ops_for_output_enable_pin_error() {
-        todo!()
+        let latch_pin_transactions = [PinTransaction::set(PinState::Low)];
+        let oe_pin_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High).with_error(MockError::Io(io::ErrorKind::Other)),
+        ];
+        let spi_transactions: &[SpiTransaction<u8>] = &[];
+
+        let mut hc595 = setup_hc595(
+            &spi_transactions,
+            &latch_pin_transactions,
+            Some(&oe_pin_transactions),
+            None,
+        );
+
+        let result = hc595.disable();
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            Error::OutputEnable(_) => {}
+            _ => {
+                panic!("Expected OutputEnable error")
+            }
+        }
+
+        let mut hc595 = hc595.free();
+        hc595.device.done();
+        hc595.latch.done();
+        hc595.output_enable.unwrap().done();
     }
 
     #[test]
