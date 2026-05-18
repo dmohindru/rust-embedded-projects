@@ -126,6 +126,7 @@ mod tests {
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
     use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
+    use embedded_hal_mock::eh1::MockError;
 
     fn setup_hc595(
         spi_transactions: &[SpiTransaction<u8>],
@@ -287,6 +288,31 @@ mod tests {
 
     #[test]
     fn should_return_error_for_clear_ops_for_register_clear_pin_error() {
-        todo!()
+        let latch_pin_transactions = [PinTransaction::set(PinState::Low)];
+
+        let spi_transactions: &[SpiTransaction<u8>] = &[];
+        let register_clear_transactions = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low).with_error(MockError::Io(std::io::ErrorKind::Other)),
+        ];
+
+        let mut hc595 = setup_hc595(
+            &spi_transactions,
+            &latch_pin_transactions,
+            None,
+            Some(&register_clear_transactions),
+        );
+
+        let result = hc595.clear();
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            Error::RegisterClear(_) => {}
+            _ => panic!("Expected RegisterClear error"),
+        }
+
+        let mut hc595 = hc595.free();
+        hc595.device.done();
+        hc595.latch.done();
+        hc595.register_clear.unwrap().done();
     }
 }
