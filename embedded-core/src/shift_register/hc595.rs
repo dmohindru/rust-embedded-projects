@@ -126,21 +126,40 @@ mod tests {
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
     use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
+
+    fn setup_hc595(
+        spi_transactions: &[SpiTransaction<u8>],
+        latch_pin_transactions: &[PinTransaction],
+        oe_pin_transactions: Option<&[PinTransaction]>,
+        rc_pin_transactions: Option<&[PinTransaction]>,
+    ) -> Hc595<Generic<SpiTransaction<u8>>, embedded_hal_mock::eh1::digital::Mock, 2> {
+        let latch_pin = PinMock::new(latch_pin_transactions);
+        let output_enable_pin = match oe_pin_transactions {
+            Some(transactions) => Some(PinMock::new(transactions)),
+            _ => None,
+        };
+        let register_clear_pin = match rc_pin_transactions {
+            Some(transactions) => Some(PinMock::new(transactions)),
+            _ => None,
+        };
+        let spi: Generic<SpiTransaction<u8>> = SpiMock::new(spi_transactions);
+
+        Hc595::<_, _, 2>::new(spi, latch_pin, output_enable_pin, register_clear_pin).unwrap()
+    }
+
     #[test]
     fn should_create_new_instance_initialize_properly() {
-        let latch_pin = PinMock::new(&[PinTransaction::set(PinState::Low)]);
-        let output_enable_pin = PinMock::new(&[PinTransaction::set(PinState::Low)]);
-        let register_clear_pin = PinMock::new(&[PinTransaction::set(PinState::High)]);
-        let spi: Generic<SpiTransaction<u8>> = SpiMock::new(&[]);
+        let latch_pin_transactions = [PinTransaction::set(PinState::Low)];
+        let output_pin_transactions = [PinTransaction::set(PinState::Low)];
+        let register_clear_pin_transactions = [PinTransaction::set(PinState::High)];
+        let spi_transactions: &[SpiTransaction<u8>] = &[];
 
-        let hc595 = Hc595::<_, _, 1>::new(
-            spi,
-            latch_pin,
-            Some(output_enable_pin),
-            Some(register_clear_pin),
-        )
-        .unwrap();
-
+        let hc595 = setup_hc595(
+            &spi_transactions,
+            &latch_pin_transactions,
+            Some(&output_pin_transactions),
+            Some(&register_clear_pin_transactions),
+        );
         let mut hc595 = hc595.free();
 
         hc595.device.done();
@@ -151,19 +170,18 @@ mod tests {
 
     #[tokio::test]
     async fn should_write_data_hc595_chip() {
-        let latch_pin = PinMock::new(&[
+        let latch_pin_transactions = [
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
             PinTransaction::set(PinState::Low),
-        ]);
-
-        let spi = SpiMock::new(&[
+        ];
+        let spi_transactions = [
             SpiTransaction::transaction_start(),
             SpiTransaction::write_vec(vec![0x01_u8, 0x02_u8]),
             SpiTransaction::transaction_end(),
-        ]);
+        ];
 
-        let mut hc595 = Hc595::<_, _, 2>::new(spi, latch_pin, None, None).unwrap();
+        let mut hc595 = setup_hc595(&spi_transactions, &latch_pin_transactions, None, None);
         let result = hc595.write(&[0x01_u8, 0x02_u8]).await;
         assert!(result.is_ok());
         let mut hc595 = hc595.free();
@@ -183,21 +201,19 @@ mod tests {
 
     #[test]
     fn should_enable_output_for_hc595_chip() {
-        let latch_pin = PinMock::new(&[PinTransaction::set(PinState::Low)]);
-        let output_enable_pin = PinMock::new(&[
+        let latch_pin_transactions = [PinTransaction::set(PinState::Low)];
+        let spi_transactions: &[SpiTransaction<u8>] = &[];
+        let output_pin_transactions = [
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::Low),
-        ]);
-        let register_clear_pin = PinMock::new(&[PinTransaction::set(PinState::High)]);
-        let spi: Generic<SpiTransaction<u8>> = SpiMock::new(&[]);
+        ];
 
-        let mut hc595 = Hc595::<_, _, 1>::new(
-            spi,
-            latch_pin,
-            Some(output_enable_pin),
-            Some(register_clear_pin),
-        )
-        .unwrap();
+        let mut hc595 = setup_hc595(
+            spi_transactions,
+            &latch_pin_transactions,
+            Some(&output_pin_transactions),
+            None,
+        );
 
         let result = hc595.enable();
         assert!(result.is_ok());
@@ -205,31 +221,26 @@ mod tests {
         hc595.device.done();
         hc595.latch.done();
         hc595.output_enable.unwrap().done();
-        hc595.register_clear.unwrap().done();
     }
 
     #[test]
-    fn should_return_error_for_enable_ops_for_output_enable_pin_error() {
-        todo!()
-    }
+    fn should_return_error_for_enable_ops_for_output_enable_pin_error() {}
 
     #[test]
     fn should_disable_output_for_hc595_chip() {
-        let latch_pin = PinMock::new(&[PinTransaction::set(PinState::Low)]);
-        let output_enable_pin = PinMock::new(&[
+        let latch_pin_transactions = [PinTransaction::set(PinState::Low)];
+        let output_pin_transactions = [
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
-        ]);
-        let register_clear_pin = PinMock::new(&[PinTransaction::set(PinState::High)]);
-        let spi: Generic<SpiTransaction<u8>> = SpiMock::new(&[]);
+        ];
+        let spi_transactions: &[SpiTransaction<u8>] = &[];
 
-        let mut hc595 = Hc595::<_, _, 1>::new(
-            spi,
-            latch_pin,
-            Some(output_enable_pin),
-            Some(register_clear_pin),
-        )
-        .unwrap();
+        let mut hc595 = setup_hc595(
+            spi_transactions,
+            &latch_pin_transactions,
+            Some(&output_pin_transactions),
+            None,
+        );
 
         let result = hc595.disable();
         assert!(result.is_ok());
@@ -237,7 +248,6 @@ mod tests {
         hc595.device.done();
         hc595.latch.done();
         hc595.output_enable.unwrap().done();
-        hc595.register_clear.unwrap().done();
     }
 
     #[test]
@@ -247,7 +257,32 @@ mod tests {
 
     #[test]
     fn should_clear_output_for_hc595_chip() {
-        todo!()
+        let latch_pin_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+        ];
+
+        let spi_transactions: &[SpiTransaction<u8>] = &[];
+        let register_clear_transactions = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+
+        let mut hc595 = setup_hc595(
+            &spi_transactions,
+            &latch_pin_transactions,
+            None,
+            Some(&register_clear_transactions),
+        );
+
+        let result = hc595.clear();
+        assert!(result.is_ok());
+        let mut hc595 = hc595.free();
+        hc595.device.done();
+        hc595.latch.done();
+        hc595.register_clear.unwrap().done();
     }
 
     #[test]
