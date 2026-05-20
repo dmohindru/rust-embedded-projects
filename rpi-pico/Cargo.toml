@@ -4,6 +4,7 @@ members = [
     "projects/project01_buttons",
     "projects/project02_max7219",
     "projects/project03_max7219_scroll",
+    "projects/project04_hc595",
 ]
 resolver = "2"
 
