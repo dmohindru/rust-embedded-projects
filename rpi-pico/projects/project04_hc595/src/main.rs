@@ -8,12 +8,10 @@ use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::peripherals::SPI0;
 use embassy_rp::spi::{Async, Config, Spi};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
-use embassy_sync::mutex::{Mutex, MutexGuard};
+use embassy_sync::mutex::Mutex;
 use embassy_time::{Delay, Timer};
 use embedded_core::button::DebouncedButton;
-use embedded_core::cursor::StepCursorCircular;
-use embedded_core::display_driver::Max7219;
-use embedded_core::frame::{decode_frames, Direction, FrameCursorCircular};
+use embedded_core::shift_register::Hc595;
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -23,14 +21,6 @@ SER     -> GP19 (SPI0 TX)
 SRCLK   -> GP18 (SPI0 SCK)
 RCLK    -> GP20 (GPIO)
 */
-static FRAME_BYTES: &[u8] = include_bytes!("../assets/poonam.bin");
-const NUM_FRAMES: usize = 54;
-
-const LED_MATRIX_ROWS: usize = 8;
-const LED_MATRIX_COLS: usize = 8;
-
-static DIRECTION: Mutex<ThreadModeRawMutex, Direction> = Mutex::new(Direction::Right);
-static STEP_CURSOR: StaticCell<Mutex<ThreadModeRawMutex, StepCursorCircular>> = StaticCell::new();
 
 // SPI type
 type MySpi = Spi<'static, SPI0, Async>;
@@ -38,11 +28,11 @@ type MySpi = Spi<'static, SPI0, Async>;
 // SPI + CS shared container
 static SPI_BUS: StaticCell<Mutex<ThreadModeRawMutex, MySpi>> = StaticCell::new();
 
-// Max7219 Type
-type Max7219Device = SpiDevice<'static, ThreadModeRawMutex, MySpi, Output<'static>>;
+// HC959 Spi Type
+type Hc595SpiDevice = SpiDevice<'static, ThreadModeRawMutex, MySpi, Output<'static>>;
 
-// Display Driver type
-type DisplayDriver = Max7219<Max7219Device, LED_MATRIX_ROWS, LED_MATRIX_COLS>;
+// HC595 Device type
+type Hc595Device = Hc595<Hc595SpiDevice, Output<'static>, 1>;
 
 //--------------------
 // Left Button Task
@@ -53,9 +43,6 @@ async fn left_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
         .wait(|| async {
             {
                 info!("Left button pressed");
-                let mut direction: MutexGuard<'_, ThreadModeRawMutex, Direction> =
-                    DIRECTION.lock().await;
-                *direction = direction.toggle();
             }
         })
         .await;
@@ -65,17 +52,11 @@ async fn left_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
 // Right Button Task
 //--------------------
 #[embassy_executor::task]
-async fn right_button_task(
-    mut button: DebouncedButton<Input<'static>, Delay>,
-    cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
-) {
+async fn right_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
     button
         .wait(|| async {
             {
                 info!("Right button pressed");
-                let mut step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
-                    cursor_mutex.lock().await;
-                step_cursor.move_step(Direction::Right);
             }
         })
         .await;
@@ -85,36 +66,13 @@ async fn right_button_task(
 // Timer Task
 //--------------------
 #[embassy_executor::task]
-async fn timer_task(
-    mut display_driver: DisplayDriver,
-    mut frame_cursor: FrameCursorCircular<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>,
-    step_cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
-) {
+async fn timer_task(mut hc595_device: Hc595Device, delay_ms: u64) {
+    let mut counter: u8 = 0;
     loop {
-        // ---- 1. Read delay from step cursor ----
-        let delay_ms = {
-            let step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
-                step_cursor_mutex.lock().await;
-            step_cursor.current_value()
-        };
-
-        // ---- 2. Sleep (NO LOCKS HELD) ----
-        Timer::after_millis(delay_ms as u64).await;
-        info!("Running timer task");
-
-        // ---- 3. Read direction from mutex ----
-        let direction = {
-            let direction_guard: MutexGuard<'static, ThreadModeRawMutex, Direction> =
-                DIRECTION.lock().await;
-            *direction_guard
-        };
-
-        // ---- 4. Move the frame cursor ----
-        frame_cursor.move_index(direction);
-
-        // ---- 5. Render frame ----
-        let frame = frame_cursor.current_frame();
-        display_driver.write_bitmap(&frame).await.unwrap();
+        info!("Writing counter value {}", counter);
+        hc595_device.write(&[counter]).await.unwrap();
+        Timer::after_millis(delay_ms).await;
+        counter = counter.wrapping_add(1);
     }
 }
 
@@ -128,16 +86,18 @@ async fn main(spawner: Spawner) {
     spi_config.frequency = 8_000_000;
 
     // Chip select pin
-    let cs = Output::new(p.PIN_20, Level::High);
+    // TODO: Not really used in this example
+    let cs = Output::new(p.PIN_14, Level::High);
+
+    // Latch pin
+    let latch = Output::new(p.PIN_20, Level::High);
 
     // SPI Pins
     let clk = p.PIN_18;
     let tx = p.PIN_19;
-    let rx = p.PIN_16;
 
     // SPI device
-    // TODO: move to tx_only
-    let spi = Spi::new(p.SPI0, clk, tx, rx, p.DMA_CH0, p.DMA_CH1, spi_config);
+    let spi = Spi::new_txonly(p.SPI0, clk, tx, p.DMA_CH0, spi_config);
 
     // Shared bus (SPI peripheral protected by Mutex)
     let spi_bus_mutex = Mutex::new(spi);
@@ -146,8 +106,8 @@ async fn main(spawner: Spawner) {
     // Device with CS handling
     let spi_device = SpiDevice::new(spi_bus, cs);
 
-    // Max7219 Device
-    let mut driver: DisplayDriver = Max7219::new(spi_device);
+    // LH595 Device
+    let hc595_device: Hc595Device = Hc595::new(spi_device, latch, None, None).unwrap();
     // ------------ SPI Config Ends --------------
 
     // ------------ Left/Right buttons --------------
@@ -156,31 +116,15 @@ async fn main(spawner: Spawner) {
     let debounced_left_btn = DebouncedButton::new(left_btn, Delay, 20);
     let debounced_right_btn = DebouncedButton::new(right_btn, Delay, 20);
 
-    //--------Frame Data-----------
-    let frames = decode_frames::<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>(FRAME_BYTES);
-    let frame_cursor = FrameCursorCircular::new(&frames);
-
-    driver.initialize().await.unwrap();
-    info!("Initialization commands written");
-    Timer::after_millis(100).await;
-
-    let step_cursor = StepCursorCircular::new(2000, 500, 250, 7);
-    let step_cursor_mutex = STEP_CURSOR.init(Mutex::new(step_cursor));
-
-    driver
-        .write_bitmap(frame_cursor.current_frame())
-        .await
-        .unwrap();
-
     spawner
         .spawn(left_button_task(debounced_left_btn))
         .expect("Failed to spawn left button task");
 
     spawner
-        .spawn(right_button_task(debounced_right_btn, step_cursor_mutex))
+        .spawn(right_button_task(debounced_right_btn))
         .expect("Failed to spawn right button task");
 
     spawner
-        .spawn(timer_task(driver, frame_cursor, step_cursor_mutex))
+        .spawn(timer_task(hc595_device, 500))
         .expect("Failed to spawn receiver task");
 }
