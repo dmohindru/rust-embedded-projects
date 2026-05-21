@@ -6,7 +6,7 @@ use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::peripherals::SPI0;
-use embassy_rp::spi::{Async, Config, Spi};
+use embassy_rp::spi::{Async, Config, Phase, Polarity, Spi};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::mutex::Mutex;
 use embassy_time::{Delay, Timer};
@@ -69,8 +69,9 @@ async fn right_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
 async fn timer_task(mut hc595_device: Hc595Device, delay_ms: u64) {
     let mut counter: u8 = 0;
     loop {
+        let reversed_counter = counter.reverse_bits();
         info!("Writing counter value {}", counter);
-        hc595_device.write(&[counter]).await.unwrap();
+        hc595_device.write(&[reversed_counter]).await.unwrap();
         Timer::after_millis(delay_ms).await;
         counter = counter.wrapping_add(1);
     }
@@ -83,14 +84,14 @@ async fn main(spawner: Spawner) {
     // ------------ SPI Config --------------
     // SPI Config
     let mut spi_config = Config::default();
-    spi_config.frequency = 8_000_000;
+    spi_config.frequency = 1_000_000;
 
     // Chip select pin
     // TODO: Not really used in this example
     let cs = Output::new(p.PIN_14, Level::High);
 
     // Latch pin
-    let latch = Output::new(p.PIN_20, Level::High);
+    let latch = Output::new(p.PIN_20, Level::Low);
 
     // SPI Pins
     let clk = p.PIN_18;
