@@ -167,6 +167,6 @@ async fn main(spawner: Spawner) {
         .expect("Failed to spawn right button task");
 
     spawner
-        .spawn(timer_task(enable_receiver, hc595_device, 500))
+        .spawn(timer_task(enable_receiver, hc595_device, 100))
         .expect("Failed to spawn receiver task");
 }
