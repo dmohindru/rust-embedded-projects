@@ -4,11 +4,15 @@
 use defmt::info;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
+use embassy_futures::select::{select, Either};
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_rp::peripherals::SPI0;
-use embassy_rp::spi::{Async, Config, Phase, Polarity, Spi};
-use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
-use embassy_sync::mutex::Mutex;
+use embassy_rp::spi::{Async, Config, Spi};
+use embassy_sync::mutex::{Mutex, MutexGuard};
+use embassy_sync::{
+    blocking_mutex::raw::ThreadModeRawMutex,
+    channel::{Channel, Receiver, Sender},
+};
 use embassy_time::{Delay, Timer};
 use embedded_core::button::DebouncedButton;
 use embedded_core::shift_register::Hc595;
@@ -34,6 +38,10 @@ type Hc595SpiDevice = SpiDevice<'static, ThreadModeRawMutex, MySpi, Output<'stat
 // HC595 Device type
 type Hc595Device = Hc595<Hc595SpiDevice, Output<'static>, 1>;
 
+// Channel for sending enabling/disabling HC595 output
+static ENABLE_CHANNEL: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
+static ENABLE: Mutex<ThreadModeRawMutex, bool> = Mutex::new(true);
+
 //--------------------
 // Left Button Task
 //--------------------
@@ -52,11 +60,17 @@ async fn left_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
 // Right Button Task
 //--------------------
 #[embassy_executor::task]
-async fn right_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
+async fn right_button_task(
+    sender: Sender<'static, ThreadModeRawMutex, bool, 1>,
+    mut button: DebouncedButton<Input<'static>, Delay>,
+) {
     button
         .wait(|| async {
             {
-                info!("Right button pressed");
+                let mut enable: MutexGuard<'_, ThreadModeRawMutex, bool> = ENABLE.lock().await;
+                *enable = !*enable;
+                sender.send(*enable).await;
+                info!("Right button pressed. Sending value {}", *enable);
             }
         })
         .await;
@@ -66,20 +80,43 @@ async fn right_button_task(mut button: DebouncedButton<Input<'static>, Delay>) {
 // Timer Task
 //--------------------
 #[embassy_executor::task]
-async fn timer_task(mut hc595_device: Hc595Device, delay_ms: u64) {
+async fn timer_task(
+    enable_receiver: Receiver<'static, ThreadModeRawMutex, bool, 1>,
+    mut hc595_device: Hc595Device,
+    delay_ms: u64,
+) {
     let mut counter: u8 = 0;
     loop {
-        let reversed_counter = counter.reverse_bits();
-        info!("Writing counter value {}", counter);
-        hc595_device.write(&[reversed_counter]).await.unwrap();
-        Timer::after_millis(delay_ms).await;
-        counter = counter.wrapping_add(1);
+        match select(Timer::after_millis(delay_ms), enable_receiver.receive()).await {
+            Either::First(_) => {
+                // Timer elapsed
+                let reversed_counter = counter.reverse_bits();
+                info!("Writing counter value {}", counter);
+                hc595_device.write(&[reversed_counter]).await.unwrap();
+                Timer::after_millis(delay_ms).await;
+                counter = counter.wrapping_add(1);
+            }
+
+            Either::Second(new_state) => {
+                if new_state {
+                    hc595_device.enable().unwrap();
+                    info!("Display enabled");
+                } else {
+                    hc595_device.disable().unwrap();
+                    info!("Display disabled");
+                }
+            }
+        }
     }
 }
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
+
+    //------------- Sender/Receivers --------
+    let enable_sender = ENABLE_CHANNEL.sender();
+    let enable_receiver = ENABLE_CHANNEL.receiver();
 
     // ------------ SPI Config --------------
     // SPI Config
@@ -90,8 +127,11 @@ async fn main(spawner: Spawner) {
     // TODO: Not really used in this example
     let cs = Output::new(p.PIN_14, Level::High);
 
-    // Latch pin
+    // Latch pin active low
     let latch = Output::new(p.PIN_20, Level::Low);
+
+    // Output enable pin active low
+    let output_enable = Output::new(p.PIN_22, Level::Low);
 
     // SPI Pins
     let clk = p.PIN_18;
@@ -108,7 +148,8 @@ async fn main(spawner: Spawner) {
     let spi_device = SpiDevice::new(spi_bus, cs);
 
     // LH595 Device
-    let hc595_device: Hc595Device = Hc595::new(spi_device, latch, None, None).unwrap();
+    let hc595_device: Hc595Device =
+        Hc595::new(spi_device, latch, Some(output_enable), None).unwrap();
     // ------------ SPI Config Ends --------------
 
     // ------------ Left/Right buttons --------------
@@ -122,10 +163,10 @@ async fn main(spawner: Spawner) {
         .expect("Failed to spawn left button task");
 
     spawner
-        .spawn(right_button_task(debounced_right_btn))
+        .spawn(right_button_task(enable_sender, debounced_right_btn))
         .expect("Failed to spawn right button task");
 
     spawner
-        .spawn(timer_task(hc595_device, 500))
+        .spawn(timer_task(enable_receiver, hc595_device, 500))
         .expect("Failed to spawn receiver task");
 }
