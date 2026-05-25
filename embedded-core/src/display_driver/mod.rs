@@ -1,3 +1,4 @@
+mod ht16k33_driver;
 mod led_matrix_driver;
 mod max7219_driver;
 pub use led_matrix_driver::LedMatrixDriver;
