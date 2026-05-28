@@ -5,6 +5,7 @@ members = [
     "projects/project02_max7219",
     "projects/project03_max7219_scroll",
     "projects/project04_hc595",
+    "projects/project05_hc595_cascade",
 ]
 resolver = "2"
 
