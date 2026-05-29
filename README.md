@@ -31,9 +31,9 @@ cargo embed               # flash micro:bit
 ## Create gif
 
 ```sh
-ffmpeg -i input.mp4 -vf \
+ffmpeg -i demo.mp4 -vf \
 "fps=5,scale=160:-1:flags=lanczos,split[s0][s1];\
  [s0]palettegen=max_colors=32[p];\
  [s1][p]paletteuse=dither=none" \
--loop 0 output.gif
+-loop 0 demo.gif
 ```
