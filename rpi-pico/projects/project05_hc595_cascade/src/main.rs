@@ -85,18 +85,16 @@ async fn timer_task(
     mut hc595_device: Hc595Device,
     delay_ms: u64,
 ) {
-    let mut counter: u16 = 0;
+    let mut pattern: u16 = 0xAAAA;
     loop {
         match select(Timer::after_millis(delay_ms), enable_receiver.receive()).await {
             Either::First(_) => {
                 // Timer elapsed
-                let reversed_counter = counter.reverse_bits();
-                // let data: [u8; 2] = reversed_counter.to_be_bytes();
-                let data: [u8; 2] = counter.to_be_bytes();
-                info!("Writing counter value {}", counter);
+                let data: [u8; 2] = pattern.to_le_bytes();
+                info!("Writing counter value {}", &pattern);
                 hc595_device.write(&data).await.unwrap();
                 Timer::after_millis(delay_ms).await;
-                counter = counter.wrapping_add(1);
+                pattern = !pattern;
             }
 
             Either::Second(new_state) => {
@@ -169,6 +167,6 @@ async fn main(spawner: Spawner) {
         .expect("Failed to spawn right button task");
 
     spawner
-        .spawn(timer_task(enable_receiver, hc595_device, 100))
+        .spawn(timer_task(enable_receiver, hc595_device, 500))
         .expect("Failed to spawn receiver task");
 }

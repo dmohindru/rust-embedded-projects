@@ -13,4 +13,4 @@ Example project to demonstrate use of hc595 serial shift register
 
 ## Demo
 
-[Rpi Demo](./demo.gif)
+![Demo Animation](./demo.gif)
