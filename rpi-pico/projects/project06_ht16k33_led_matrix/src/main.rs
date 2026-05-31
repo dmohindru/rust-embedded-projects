@@ -2,17 +2,18 @@
 #![no_main]
 
 use defmt::info;
-use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
+use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_executor::Spawner;
-use embassy_rp::gpio::{Input, Level, Output, Pull};
-use embassy_rp::peripherals::SPI0;
-use embassy_rp::spi::{Async, Config, Spi};
+use embassy_rp::bind_interrupts;
+use embassy_rp::gpio::{Input, Pull};
+use embassy_rp::i2c::{Async, Config, I2c, InterruptHandler};
+use embassy_rp::peripherals::I2C1;
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::mutex::{Mutex, MutexGuard};
 use embassy_time::{Delay, Timer};
 use embedded_core::button::DebouncedButton;
 use embedded_core::cursor::StepCursorCircular;
-use embedded_core::display_driver::Max7219;
+use embedded_core::display_driver::Ht16K33;
 use embedded_core::frame::{decode_frames, Direction, FrameCursorCircular};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
@@ -25,6 +26,7 @@ poonam.bin --> poonam, num frames: 54
 */
 static FRAME_BYTES: &[u8] = include_bytes!("../assets/poonam.bin");
 const NUM_FRAMES: usize = 54;
+static HT16K33_DEVICE_ADDR: u8 = 0x70;
 
 const LED_MATRIX_ROWS: usize = 8;
 const LED_MATRIX_COLS: usize = 8;
@@ -33,16 +35,21 @@ static DIRECTION: Mutex<ThreadModeRawMutex, Direction> = Mutex::new(Direction::R
 static STEP_CURSOR: StaticCell<Mutex<ThreadModeRawMutex, StepCursorCircular>> = StaticCell::new();
 
 // SPI type
-type MySpi = Spi<'static, SPI0, Async>;
+type MyI2c = I2c<'static, I2C1, Async>;
 
-// SPI + CS shared container
-static SPI_BUS: StaticCell<Mutex<ThreadModeRawMutex, MySpi>> = StaticCell::new();
+// I2C + CS shared container
+static I2C_BUS: StaticCell<Mutex<ThreadModeRawMutex, MyI2c>> = StaticCell::new();
 
-// Max7219 Type
-type Max7219Device = SpiDevice<'static, ThreadModeRawMutex, MySpi, Output<'static>>;
+// HT16K33 Type
+type Ht16K33Device = I2cDevice<'static, ThreadModeRawMutex, MyI2c>;
 
 // Display Driver type
-type DisplayDriver = Max7219<Max7219Device, LED_MATRIX_ROWS, LED_MATRIX_COLS>;
+type DisplayDriver = Ht16K33<Ht16K33Device, LED_MATRIX_ROWS, LED_MATRIX_COLS>;
+
+// Interrupt binding
+bind_interrupts!( struct I2cIrqs {
+    I2C1_IRQ => InterruptHandler<I2C1>;
+});
 
 //--------------------
 // Left Button Task
@@ -100,7 +107,7 @@ async fn timer_task(
 
         // ---- 2. Sleep (NO LOCKS HELD) ----
         Timer::after_millis(delay_ms as u64).await;
-        info!("Running                                                                                timer task");
+        info!("Running timer task");
 
         // ---- 3. Read direction from mutex ----
         let direction = {
@@ -122,32 +129,26 @@ async fn timer_task(
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
 
-    // ------------ SPI Config --------------
-    // SPI Config
-    let mut spi_config = Config::default();
-    spi_config.frequency = 8_000_000;
+    // ------------ I2C Config --------------
+    // I2c Config
+    let i2c_config = Config::default();
 
-    // Chip select pin
-    let cs = Output::new(p.PIN_20, Level::High);
+    // I2c Pins
+    let scl = p.PIN_27;
+    let sda = p.PIN_26;
 
-    // SPI Pins
-    let clk = p.PIN_18;
-    let tx = p.PIN_19;
-    let rx = p.PIN_16;
+    // I2c device
+    let i2c = I2c::new_async(p.I2C1, scl, sda, I2cIrqs, i2c_config);
 
-    // SPI device
-    // TODO: move to tx_only
-    let spi = Spi::new(p.SPI0, clk, tx, rx, p.DMA_CH0, p.DMA_CH1, spi_config);
+    // Shared bus (I2c peripheral protected by Mutex)
+    let i2c_bus_mutex = Mutex::new(i2c);
+    let i2c_bus = I2C_BUS.init(i2c_bus_mutex);
 
-    // Shared bus (SPI peripheral protected by Mutex)
-    let spi_bus_mutex = Mutex::new(spi);
-    let spi_bus = SPI_BUS.init(spi_bus_mutex);
+    // I2c Device backed by bus
+    let i2c_device = I2cDevice::new(i2c_bus);
 
-    // Device with CS handling
-    let spi_device = SpiDevice::new(spi_bus, cs);
-
-    // Max7219 Device
-    let mut driver: DisplayDriver = Max7219::new(spi_device);
+    // Ht16K33 Device
+    let mut driver: DisplayDriver = Ht16K33::new(i2c_device, HT16K33_DEVICE_ADDR);
     // ------------ SPI Config Ends --------------
 
     // ------------ Left/Right buttons --------------
