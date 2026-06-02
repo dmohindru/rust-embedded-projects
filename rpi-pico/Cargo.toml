@@ -6,6 +6,7 @@ members = [
     "projects/project03_max7219_scroll",
     "projects/project04_hc595",
     "projects/project05_hc595_cascade",
+    "projects/project06_ht16k33_led_matrix",
 ]
 resolver = "2"
 
