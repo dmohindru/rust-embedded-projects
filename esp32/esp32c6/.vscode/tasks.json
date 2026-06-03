@@ -38,48 +38,14 @@
     {
       "label": "Flash Debug",
       "type": "shell",
-      "command": "cargo espflash flash",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
+      "command": "probe-rs run --chip ESP32C6 ${workspaceFolder}/../../target/riscv32imac-unknown-none-elf/debug/${workspaceFolderBasename}",
+      "dependsOn": "Build Debug"
     },
     {
       "label": "Flash Release",
       "type": "shell",
-      "command": "cargo espflash flash --release",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "RTT Attach Debug",
-      "type": "shell",
-      "command": "probe-rs attach --chip ESP32C6 ${env:ESP32_C6_ROOT_DIR}/target/riscv32imac-unknown-none-elf/debug/${workspaceFolderBasename}",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "RTT Attach Release",
-      "type": "shell",
-      "command": "probe-rs attach --chip ESP32C6 ${env:ESP32_C6_ROOT_DIR}/target/riscv32imac-unknown-none-elf/release/${workspaceFolderBasename}",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Flash + RTT Debug",
-      "dependsOrder": "sequence",
-      "dependsOn": ["Flash Debug", "RTT Attach Debug"]
-    },
-    {
-      "label": "Flash + RTT Release",
-      "dependsOrder": "sequence",
-      "dependsOn": ["Flash Release", "RTT Attach Release"]
+      "command": "probe-rs run --chip ESP32C6 ${workspaceFolder}/../../target/riscv32imac-unknown-none-elf/release/${workspaceFolderBasename}",
+      "dependsOn": "Build Release"
     }
   ]
 }

@@ -8,7 +8,6 @@
 #![deny(clippy::large_stack_frames)]
 
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::timer::timg::TimerGroup;
 use rtt_target::rprintln;
@@ -52,7 +51,7 @@ async fn main(spawner: Spawner) -> ! {
     let _ = spawner;
 
     loop {
-        rprintln!("another one its running...");
+        rprintln!("Hello from ESP32C6 Chip");
         embassy_time::Timer::after_secs(1).await;
     }
 
