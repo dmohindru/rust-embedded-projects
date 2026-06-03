@@ -1,0 +1,85 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "cargo clean",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Debug",
+      "type": "shell",
+      "command": "cargo build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Release",
+      "type": "shell",
+      "command": "cargo build --release",
+      "group": "build",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Flash Debug",
+      "type": "shell",
+      "command": "cargo espflash flash",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Flash Release",
+      "type": "shell",
+      "command": "cargo espflash flash --release",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "RTT Attach Debug",
+      "type": "shell",
+      "command": "probe-rs attach --chip ESP32C6 ${env:ESP32_C6_ROOT_DIR}/target/riscv32imac-unknown-none-elf/debug/${workspaceFolderBasename}",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "RTT Attach Release",
+      "type": "shell",
+      "command": "probe-rs attach --chip ESP32C6 ${env:ESP32_C6_ROOT_DIR}/target/riscv32imac-unknown-none-elf/release/${workspaceFolderBasename}",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Flash + RTT Debug",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Flash Debug", "RTT Attach Debug"]
+    },
+    {
+      "label": "Flash + RTT Release",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Flash Release", "RTT Attach Release"]
+    }
+  ]
+}
