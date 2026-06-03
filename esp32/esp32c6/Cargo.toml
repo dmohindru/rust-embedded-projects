@@ -18,6 +18,7 @@ critical-section = "1.2.0"
 static_cell = "2.1.1"
 esp-println = { version = "0.13", features = ["esp32c6", "log"] }
 log = "0.4"
+embedded-core = { path = "../../embedded-core" }
 
 # For fine tuning these settings, please refer to https://doc.rust-lang.org/cargo/reference/profiles.html
 [profile.dev]
