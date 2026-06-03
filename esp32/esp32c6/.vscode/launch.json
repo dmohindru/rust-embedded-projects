@@ -2,26 +2,33 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "RPI Pico Debug",
+      "name": "ESP32-C6 Debug",
       "type": "probe-rs-debug",
       "request": "launch",
+
       "preLaunchTask": "Build Debug",
-      "chip": "rp2040",
+
+      "chip": "ESP32C6",
+
       "connectUnderReset": false,
+
+      "wireProtocol": "Jtag",
+
       "speed": 4000,
+
       "flashingConfig": {
         "flashingEnabled": true
       },
+
       "coreConfigs": [
         {
           "coreIndex": 0,
-          "programBinary": "${env:ESP32_C6_ROOT_DIR}/target/thumbv6m-none-eabi/debug/${workspaceFolderBasename}",
-          "svdFile": "${env:PICO_ROOT_DIR}/rp2040.svd",
+          "programBinary": "${workspaceFolder}/../../target/riscv32imac-unknown-none-elf/debug/${workspaceFolderBasename}",
           "rttEnabled": true
         }
       ],
-      "consoleLogLevel": "Info", //Error, Warn, Info, Debug, Trace
-      "wireProtocol": "Swd"
+
+      "consoleLogLevel": "Info"
     }
   ]
 }
