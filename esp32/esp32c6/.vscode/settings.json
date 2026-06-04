@@ -1,0 +1,8 @@
+{
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.cargo.allTargets": false,
+  "rust-analyzer.check.extraArgs": ["--target", "riscv32imac-unknown-none-elf"],
+  "terminal.integrated.env.linux": {
+    "ESP32_C6_ROOT_DIR": "/home/dhruv/Programming/rust/embedded/rust-embedded-projects/esp32/esp32c6"
+  }
+}

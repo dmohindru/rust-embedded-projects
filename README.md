@@ -5,6 +5,7 @@ This repository documents my hands-on learning path in **Embedded Rust** develop
 - [**BBC micro:bit v2**](./microbit-v2/)
 - [**STM32F3 Discovery**](./stm32f3discovery/)
 - [**Raspberry Pi Pico**](./rpi-pico/)
+- [**ESP32**](./esp32/)
 
 ## Structure
 

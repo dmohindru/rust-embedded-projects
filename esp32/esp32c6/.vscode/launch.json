@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ESP32-C6 Debug",
+      "type": "probe-rs-debug",
+      "request": "launch",
+
+      "preLaunchTask": "Build Debug",
+
+      "chip": "ESP32C6",
+
+      "connectUnderReset": false,
+
+      "wireProtocol": "Jtag",
+
+      "speed": 4000,
+
+      "flashingConfig": {
+        "flashingEnabled": true
+      },
+
+      "coreConfigs": [
+        {
+          "coreIndex": 0,
+          "programBinary": "${workspaceFolder}/../../target/riscv32imac-unknown-none-elf/debug/${workspaceFolderBasename}",
+          "rttEnabled": true
+        }
+      ],
+
+      "consoleLogLevel": "Info"
+    }
+  ]
+}
