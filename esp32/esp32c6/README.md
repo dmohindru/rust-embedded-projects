@@ -1,29 +1,7 @@
-cargo build --release
+# Introduction
 
-cargo espflash flash --release --monitor
+This folder contains all the project related to [ESP32C6 chip](https://www.espressif.com/en/products/socs/esp32-c6)
 
-probe-rs attach --chip ESP32C6
-probe-rs attach --chip ESP32C6 target/riscv32imac-unknown-none-elf/release/hello-esp32
+# Projects List
 
-// for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
-
-goals
-
-- logging
-- debugger
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "probe-rs-debug",
-      "request": "launch",
-      "name": "Debug ESP32-C6",
-      "chip": "ESP32C6",
-      "cwd": "${workspaceFolder}",
-      "binary": "${workspaceFolder}/target/riscv32imac-unknown-none-elf/debug/hello-esp32"
-    }
-  ]
-}
-```
+- [**00 Hello world**](./projects/project00_hello_world/README.md): This is a classic hello world program
