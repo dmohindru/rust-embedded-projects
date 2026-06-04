@@ -7,17 +7,9 @@ version = "0.1.0"
 
 [dependencies]
 esp-hal = { workspace = true }
-
 esp-rtos = { workspace = true }
-
 esp-bootloader-esp-idf = { workspace = true }
-
 embassy-executor = { workspace = true }
 embassy-time = { workspace = true }
 esp-alloc = { workspace = true }
 rtt-target = { workspace = true }
-
-critical-section = { workspace = true }
-static_cell = { workspace = true }
-esp-println = { workspace = true }
-log = { workspace = true }

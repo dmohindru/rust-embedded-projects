@@ -537,17 +537,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "esp-build"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8aa1c8f9954c9506699cf1ca10a2adcc226ff10b6ae3cb9e875cf2c6a0b9a372"
-dependencies = [
- "quote",
- "syn 2.0.117",
- "termcolor",
-]
-
-[[package]]
 name = "esp-config"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -633,18 +622,6 @@ name = "esp-metadata-generated"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42c2ee95b945a4780796e4359e72c033aed3b45073880e8029458f538532db8a"
-
-[[package]]
-name = "esp-println"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "960703930f9f3c899ddedd122ea27a09d6a612c22323157e524af5b18876448e"
-dependencies = [
- "critical-section",
- "esp-build",
- "log",
- "portable-atomic",
-]
 
 [[package]]
 name = "esp-radio-rtos-driver"
@@ -1130,17 +1107,13 @@ dependencies = [
 name = "project00_hello_world"
 version = "0.1.0"
 dependencies = [
- "critical-section",
  "embassy-executor",
  "embassy-time",
  "esp-alloc",
  "esp-bootloader-esp-idf",
  "esp-hal",
- "esp-println",
  "esp-rtos",
- "log",
  "rtt-target",
- "static_cell",
 ]
 
 [[package]]
@@ -1372,15 +1345,6 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
-
-[[package]]
-name = "static_cell"
-version = "2.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0530892bb4fa575ee0da4b86f86c667132a94b74bb72160f58ee5a4afec74c23"
-dependencies = [
- "portable-atomic",
-]
 
 [[package]]
 name = "strsim"
