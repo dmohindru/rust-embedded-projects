@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use defmt::info;
+use defmt::println;
 use embassy_executor::Spawner;
 use embassy_time::Timer;
 
@@ -26,12 +26,11 @@ async fn main(_spawner: Spawner) -> ! {
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     let sw_interrupt = SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
     start(timg0.timer0, sw_interrupt.software_interrupt0);
-    info!("Embassy initialized!");
-    // panic!("Reached main");
+    println!("Embassy initialized!");
 
     // =========== Application ===============
     loop {
-        info!("Hello from ESP32C6 Chip");
+        println!("Hello from ESP32C6 Chip");
         Timer::after_secs(1).await;
     }
 }
