@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["projects/project00_hello_world"]
+members = ["projects/project00_hello_world", "projects/project01_buttons"]
 
 [workspace.dependencies]
 # defmt
@@ -15,6 +15,7 @@ esp-backtrace = { version = "0.18.1", features = [
 # embassy
 embassy-executor = "0.10.0"
 embassy-time = "0.5.0"
+embassy-sync = "0.8.0"
 
 # esp
 esp-hal = { version = "1.1.0", features = ["esp32c6", "defmt", "unstable"] }

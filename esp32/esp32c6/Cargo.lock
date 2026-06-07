@@ -458,6 +458,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-core"
+version = "0.1.0"
+dependencies = [
+ "defmt 0.3.100",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "heapless 0.8.0",
+]
+
+[[package]]
 name = "embedded-hal"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1277,6 +1287,23 @@ dependencies = [
  "defmt 1.1.0",
  "embassy-executor",
  "embassy-time",
+ "esp-alloc",
+ "esp-backtrace",
+ "esp-bootloader-esp-idf",
+ "esp-hal",
+ "esp-println",
+ "esp-rtos",
+]
+
+[[package]]
+name = "project01_buttons"
+version = "0.1.0"
+dependencies = [
+ "defmt 1.1.0",
+ "embassy-executor",
+ "embassy-sync 0.8.0",
+ "embassy-time",
+ "embedded-core",
  "esp-alloc",
  "esp-backtrace",
  "esp-bootloader-esp-idf",
