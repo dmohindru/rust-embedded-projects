@@ -1286,6 +1286,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "project01_buttons"
+version = "0.1.0"
+dependencies = [
+ "defmt 1.1.0",
+ "embassy-executor",
+ "embassy-time",
+ "esp-alloc",
+ "esp-backtrace",
+ "esp-bootloader-esp-idf",
+ "esp-hal",
+ "esp-println",
+ "esp-rtos",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
