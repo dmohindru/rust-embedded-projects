@@ -38,13 +38,13 @@
     {
       "label": "Flash Debug",
       "type": "shell",
-      "command": "probe-rs run --chip ESP32C6 ${workspaceFolder}/../../target/riscv32imac-unknown-none-elf/debug/${workspaceFolderBasename}",
+      "command": "cargo run",
       "dependsOn": "Build Debug"
     },
     {
       "label": "Flash Release",
       "type": "shell",
-      "command": "probe-rs run --chip ESP32C6 ${workspaceFolder}/../../target/riscv32imac-unknown-none-elf/release/${workspaceFolderBasename}",
+      "command": "cargo run --release",
       "dependsOn": "Build Release"
     }
   ]
