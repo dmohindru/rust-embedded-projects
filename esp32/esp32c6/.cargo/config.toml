@@ -16,3 +16,6 @@ runner = "espflash flash --monitor --log-format defmt"
 
 [unstable]
 build-std = ["alloc", "core"]
+
+[env]
+DEFMT_LOG = "info"
