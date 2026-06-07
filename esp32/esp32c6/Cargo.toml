@@ -22,9 +22,6 @@ esp-rtos = { version = "0.3.0", features = ["embassy", "defmt", "esp32c6"] }
 esp-bootloader-esp-idf = { version = "0.5.0", features = ["esp32c6"] }
 esp-alloc = "0.10.0"
 
-
-# critical-section = "1.2.0"
-# static_cell = "2.1.1"
 # Driver library (common utils)
 embedded-core = { path = "../../embedded-core" }
 

@@ -17,8 +17,16 @@ use esp_rtos::start;
 extern crate alloc;
 esp_bootloader_esp_idf::esp_app_desc!();
 
+#[embassy_executor::task]
+async fn run() {
+    loop {
+        info!("Hello from embassy task!");
+        Timer::after_millis(500).await;
+    }
+}
+
 #[esp_rtos::main]
-async fn main(_spawner: Spawner) -> ! {
+async fn main(spawner: Spawner) {
     // =========== Initialization ===============
     let config = Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = init(config);
@@ -29,8 +37,9 @@ async fn main(_spawner: Spawner) -> ! {
     info!("Embassy initialized!");
 
     // =========== Application ===============
+    spawner.spawn(run().unwrap());
     loop {
-        info!("Hello from ESP32C6 Chip");
+        info!("Hello from embassy main!");
         Timer::after_secs(1).await;
     }
 }
