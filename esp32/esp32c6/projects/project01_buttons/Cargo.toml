@@ -14,9 +14,13 @@ esp-backtrace = { workspace = true }
 # embassy
 embassy-executor = { workspace = true }
 embassy-time = { workspace = true }
+embassy-sync = { workspace = true }
 
 # esp
 esp-hal = { workspace = true }
 esp-rtos = { workspace = true }
 esp-bootloader-esp-idf = { workspace = true }
 esp-alloc = { workspace = true }
+
+# Driver library (common utils)
+embedded-core = { workspace = true }
