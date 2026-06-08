@@ -1,0 +1,61 @@
+[workspace]
+resolver = "3"
+members = ["projects/project00_hello_world"]
+
+[workspace.dependencies]
+# defmt
+defmt = "1.0.1"
+defmt-rtt = "1.0.0"
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+
+# embassy
+embassy-usb = { version = "0.5.1", features = [
+  "defmt",
+] } # Change stm32f303ze to your chip name, if necessary.
+embassy-sync = { version = "0.7.2", features = ["defmt"] }
+embassy-executor = { version = "0.9.0", features = [
+  "arch-cortex-m",
+  "executor-thread",
+  "executor-interrupt",
+  "defmt",
+] }
+embassy-time = { version = "0.5.0", features = [
+  "defmt",
+  "defmt-timestamp-uptime",
+  "tick-hz-32_768",
+] }
+embassy-futures = "0.1.2"
+embassy-embedded-hal = "0.5.0"
+
+# stm32f3 (platform)
+embassy-stm32 = { version = "0.4.0", features = [
+  "defmt",
+  "stm32f303vc",
+  "unstable-pac",
+  "memory-x",
+  "time-driver-tim2",
+  "exti",
+] }
+cortex-m = { version = "0.7.6", features = [
+  "inline-asm",
+  "critical-section-single-core",
+] }
+cortex-m-rt = "0.7.0"
+
+# Others
+# embedded-hal = "1.0"
+# heapless = { version = "0.8", default-features = false }
+# nb = "1.0.0"
+# embedded-storage = "0.3.1"
+# static_cell = "2"
+
+# Driver library (common utils)
+embedded-core = { path = "../../embedded-core" }
+
+[profile.release]
+debug = 2
+
+# [package.metadata.embassy]
+# build = [
+#   { target = "thumbv7em-none-eabi", artifact-dir = "out/examples/stm32f3" },
+# ]
