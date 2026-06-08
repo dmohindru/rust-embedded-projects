@@ -1,0 +1,8 @@
+{
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.cargo.allTargets": false,
+  "rust-analyzer.check.extraArgs": ["--target", "thumbv7em-none-eabihf"],
+  "terminal.integrated.env.linux": {
+    "STM32F3_ROOT_DIR": "/home/dhruv/Programming/rust/embedded/rust-embedded-projects/stm32/stm32f3"
+  }
+}
