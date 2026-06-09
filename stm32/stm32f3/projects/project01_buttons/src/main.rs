@@ -53,7 +53,6 @@ async fn main(spawner: Spawner) {
     let config = Config::default();
     let p = embassy_stm32::init(config);
     let btn = ExtiInput::new(p.PA0, p.EXTI0, Pull::None);
-    info!("Button level: {}", btn.is_high());
     let debounced_btn = DebouncedButton::new(btn, Delay, 20).with_active_level(ActiveLevel::High);
 
     spawner
