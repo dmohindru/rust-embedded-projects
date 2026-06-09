@@ -9,7 +9,10 @@ use embassy_sync::{
     mutex::{Mutex, MutexGuard},
 };
 use embassy_time::{Delay, Timer};
-use embedded_core::{button::DebouncedButton, frame::Direction};
+use embedded_core::{
+    button::{ActiveLevel, DebouncedButton},
+    frame::Direction,
+};
 use {defmt_rtt as _, panic_probe as _};
 
 type ButtonStateType = Mutex<ThreadModeRawMutex, Direction>;
@@ -49,9 +52,9 @@ async fn button_task(mut button: DebouncedButton<ExtiInput<'static>, Delay>) {
 async fn main(spawner: Spawner) {
     let config = Config::default();
     let p = embassy_stm32::init(config);
-    let btn = ExtiInput::new(p.PA0, p.EXTI0, Pull::Up);
+    let btn = ExtiInput::new(p.PA0, p.EXTI0, Pull::None);
     info!("Button level: {}", btn.is_high());
-    let debounced_btn = DebouncedButton::new(btn, Delay, 20);
+    let debounced_btn = DebouncedButton::new(btn, Delay, 20).with_active_level(ActiveLevel::High);
 
     spawner
         .spawn(log_button_state())
