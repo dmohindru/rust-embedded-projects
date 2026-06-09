@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["projects/project00_hello_world"]
+members = ["projects/project00_hello_world", "projects/project01_buttons"]
 
 [workspace.dependencies]
 # defmt
