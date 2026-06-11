@@ -1,9 +1,9 @@
-
 # Embedded Rust Architecture Guide
 
 ## Overview
 
 This document describes a layered architecture for Embedded Rust projects that support:
+
 - Multiple boards (Pico, STM32, ESP32, Micro:bit)
 - Multiple transports (HTTP, USB HID, UART, BLE)
 - Testable business logic
@@ -85,6 +85,7 @@ embedded_core/
 # Models Layer
 
 Purpose:
+
 - Shared data structures
 - Configuration objects
 - Domain types
@@ -105,11 +106,13 @@ Models contain data only.
 # Drivers Layer
 
 Purpose:
+
 - Direct hardware interaction
 - Protocol implementation
 - Device initialization
 
 Examples:
+
 - HT16K33
 - 74HC595
 - EEPROM
@@ -129,6 +132,7 @@ Drivers should not contain business logic.
 # Driver Traits
 
 Purpose:
+
 - Abstract capabilities
 - Enable mocking
 - Allow service portability
@@ -157,11 +161,13 @@ impl<I2C> MatrixDisplay for Ht16k33<I2C> {
 # Service Layer
 
 Purpose:
+
 - Business logic
 - Application rules
 - Device behavior
 
 Examples:
+
 - save configuration
 - show startup animation
 - play LED sequence
@@ -178,6 +184,7 @@ where
 ```
 
 Services know nothing about:
+
 - HTTP
 - USB
 - WiFi
@@ -222,6 +229,7 @@ Enables TDD and desktop testing.
 # Commands Layer
 
 Purpose:
+
 - Represent user intentions
 - Transport-independent requests
 
@@ -242,6 +250,7 @@ pub enum Command {
 # Responses
 
 Purpose:
+
 - Standardized results
 
 Example:
@@ -259,6 +268,7 @@ pub enum Response {
 # Dispatcher
 
 Purpose:
+
 - Convert commands into service calls
 
 Example:
@@ -284,11 +294,13 @@ The dispatcher becomes the center of the application.
 # Transport Layer
 
 Purpose:
+
 - Parse external protocols
 - Create commands
 - Encode responses
 
 Examples:
+
 - HTTP
 - USB HID
 - UART
@@ -523,6 +535,7 @@ Trait
 Everything else (HTTP, USB HID, BLE, UART, WiFi) becomes an adapter around that core.
 
 This keeps the architecture:
+
 - portable
 - testable
 - maintainable

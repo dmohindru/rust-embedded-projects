@@ -1,19 +1,22 @@
 ## LED Pattern service
 
-As an LED pattern service, I own
+### User story 1
 
-- LED Pattern Engine
-- Led Driver (via trait)
-- Storage Driver (via trait)
+As a user of Led Pattern Service
 
-I will provide functionality to
+- I should be able to set a led animation pattern
+- what ever led pattern is set it should be persisted in a storage
 
-- set led animation pattern
-- get current led animation pattern
-- cycle to next led animation pattern
-- whenever a new led animation pattern is set either by set or cycle command. I will store the active pattern to a storage device
-- I will provide a tick function that get the next animation frame from LED Patten Engine and write to Led Driver
+### User story 2
 
-I will NOT have following feature
+As a user of Led Pattern Service
 
-- I will not drive the next animation frame of my own. But the call of tick function will decide how she wants to call either via user button, timer, some event etc.
+- I should be able to cycle through next animation pattern provided by service
+- The updated animation pattern should be persisted in a storage
+
+### User story 3
+
+As a user of Led Pattern Service
+
+- I should able to generate next animation led frame in current animation pattern
+- I should see the next animation pattern on led device

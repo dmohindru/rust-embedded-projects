@@ -1,8 +1,8 @@
-# Pico W Embedded Control Platform Project
+# Embedded Control Platform Project
 
 ## Project Vision
 
-The project evolved from a simple Raspberry Pi Pico W web server idea into a complete embedded systems platform with:
+The project evolved from a simple Raspberry Pi Pico W or ESP32 web server idea into a complete embedded systems platform with:
 
 - Web-based control interface
 - USB device interface
@@ -43,6 +43,7 @@ Key architectural idea:
 > Business logic should be transport-independent.
 
 This means:
+
 - Web server
 - USB device
 - Future BLE/UART interfaces
@@ -62,9 +63,11 @@ all talk to the same internal services.
 ### 1. I2C EEPROM
 
 Purpose:
+
 - Persistent configuration storage
 
 Stores:
+
 - Wi-Fi credentials
 - LED matrix settings
 - LED bar patterns
@@ -74,6 +77,7 @@ Stores:
 ### 2. I2C LED Matrix (8x8)
 
 Features:
+
 - bitmap editing
 - animations
 - effects
@@ -82,6 +86,7 @@ Features:
 ### 3. 74HC595 LED Bar Driver
 
 Features:
+
 - 1D pattern sequences
 - animation playback
 - timing control
@@ -104,6 +109,7 @@ struct Config {
 ```
 
 Important concepts:
+
 - versioning
 - checksum/CRC validation
 - corruption recovery
@@ -123,6 +129,7 @@ Important concepts:
 ## Suggested Architecture
 
 Separate:
+
 - Pattern
 - Animation
 - Renderer
@@ -134,6 +141,7 @@ Stores bitmap data.
 ### Animation
 
 Examples:
+
 - blink
 - fade
 - pulse
@@ -143,6 +151,7 @@ Examples:
 ### Renderer
 
 Responsible for:
+
 - timing
 - transitions
 - frame updates
@@ -188,11 +197,13 @@ Pico-Control-XXXX
 ```
 
 User:
+
 - connects via phone/laptop
 - opens setup page
 - enters Wi-Fi credentials
 
 Device:
+
 - saves config to EEPROM
 - restarts
 - joins Wi-Fi network
@@ -222,6 +233,7 @@ using mDNS.
 ## Dashboard
 
 Display:
+
 - Wi-Fi status
 - IP address
 - uptime
@@ -232,11 +244,11 @@ Display:
 
 Suggested behavior:
 
-| State | LED |
-|---|---|
-| AP mode | blinking |
-| Connected | solid |
-| Error | fast blink |
+| State     | LED        |
+| --------- | ---------- |
+| AP mode   | blinking   |
+| Connected | solid      |
+| Error     | fast blink |
 
 ---
 
@@ -245,16 +257,19 @@ Suggested behavior:
 ## Factory Reset
 
 Possible implementations:
+
 - long button press
 - reset sequence
 
 Actions:
+
 - clear EEPROM config
 - return to AP mode
 
 ## Restart Option
 
 Available from:
+
 - AP mode UI
 - normal web UI
 
@@ -264,13 +279,14 @@ Available from:
 
 Recommended stack:
 
-| Component | Recommendation |
-|---|---|
-| Frontend | Preact |
-| Build Tool | Vite |
-| CSS | Pico.css |
+| Component  | Recommendation |
+| ---------- | -------------- |
+| Frontend   | Preact         |
+| Build Tool | Vite           |
+| CSS        | Pico.css       |
 
 Alternative:
+
 - pure HTML/CSS/JS
 
 ---
@@ -278,16 +294,19 @@ Alternative:
 # Frontend Delivery Model
 
 The Pico W serves:
+
 - HTML
 - CSS
 - JavaScript
 
 Browser performs:
+
 - rendering
 - UI updates
 - fetch/WebSocket communication
 
 The Pico only:
+
 - serves static files
 - handles API requests
 - controls hardware
@@ -312,11 +331,13 @@ POST   /api/reset
 # WebSocket Support
 
 Recommended for:
+
 - live updates
 - real-time LED control
 - status notifications
 
 Benefits:
+
 - lower latency
 - reduced polling
 - better UX
@@ -328,12 +349,15 @@ Benefits:
 ## Recommended USB Strategy
 
 Preferred:
+
 - HID device
 
 Avoid initially:
+
 - fully custom USB class
 
 Why HID:
+
 - no kernel driver required
 - supported by browsers
 - cross-platform
@@ -374,6 +398,7 @@ Pico HID Device
 ```
 
 Advantages:
+
 - no Linux daemon required
 - no custom kernel driver
 - direct browser control
@@ -391,6 +416,7 @@ Frontend
 ```
 
 Both expose:
+
 - identical commands
 - identical responses
 
@@ -403,6 +429,7 @@ UI becomes transport-independent.
 Very important recommendation:
 
 Use same logical protocol for:
+
 - HTTP
 - USB HID
 - future UART/BLE
@@ -413,12 +440,13 @@ Example:
 {
   "cmd": "matrix.set_pattern",
   "data": {
-    "pattern": [0,24,60,126]
+    "pattern": [0, 24, 60, 126]
   }
 }
 ```
 
 Benefits:
+
 - reusable frontend
 - reusable backend
 - scalable architecture
@@ -720,6 +748,7 @@ Transport abstraction cleanup.
 This project is no longer just a Raspberry Pi Pico W demo.
 
 It becomes:
+
 - an embedded platform
 - a networking project
 - a USB device project

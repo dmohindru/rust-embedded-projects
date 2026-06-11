@@ -7,7 +7,7 @@ concrete hardware using the Embassy async framework.
 The goal is to keep the **driver hardware-agnostic** while allowing it
 to run on specific microcontrollers.
 
-------------------------------------------------------------------------
+---
 
 # 1. Design Philosophy
 
@@ -24,11 +24,11 @@ MCU peripheral
 
 This provides:
 
--   portability across microcontrollers
--   testability without hardware
--   separation between driver logic and hardware setup
+- portability across microcontrollers
+- testability without hardware
+- separation between driver logic and hardware setup
 
-------------------------------------------------------------------------
+---
 
 # 2. Driver Layer (Hardware Agnostic)
 
@@ -36,7 +36,7 @@ The driver depends only on `embedded-hal` traits.
 
 Example:
 
-``` rust
+```rust
 use embedded_hal_async::spi::SpiDevice;
 
 pub struct Max7219Driver<D, const R: usize, const C: usize>
@@ -49,16 +49,16 @@ where
 
 Key ideas:
 
--   The driver **does not know what MCU is used**
--   It only requires a device implementing `SpiDevice`
--   `const generics` allow compile-time configuration (rows/columns)
+- The driver **does not know what MCU is used**
+- It only requires a device implementing `SpiDevice`
+- `const generics` allow compile-time configuration (rows/columns)
 
 Advantages:
 
--   works with any HAL implementing `embedded-hal`
--   unit tests can use mock implementations
+- works with any HAL implementing `embedded-hal`
+- unit tests can use mock implementations
 
-------------------------------------------------------------------------
+---
 
 # 3. Hardware Abstraction Layer (HAL)
 
@@ -67,18 +67,18 @@ microcontroller.
 
 Example HAL:
 
--   embassy-nrf
+- embassy-nrf
 
 This layer exposes peripherals such as:
 
-Spim`<SPI3>`{=html}\
+Spim`<SPI3>`\
 GPIO pins\
 interrupts\
 DMA
 
 These are still **not directly passed to the driver**.
 
-------------------------------------------------------------------------
+---
 
 # 4. Bus Device Adapter
 
@@ -98,11 +98,11 @@ Embassy provides this adapter:
 
 This wrapper:
 
--   manages the **CS pin automatically**
--   ensures **exclusive access to the SPI bus**
--   implements `embedded_hal_async::spi::SpiDevice`
+- manages the **CS pin automatically**
+- ensures **exclusive access to the SPI bus**
+- implements `embedded_hal_async::spi::SpiDevice`
 
-------------------------------------------------------------------------
+---
 
 # 5. Shared Bus Infrastructure
 
@@ -110,7 +110,7 @@ Embassy allows multiple devices to share the same SPI bus using a mutex.
 
 Example setup:
 
-``` rust
+```rust
 static SPI_BUS: StaticCell<Mutex<NoopRawMutex, Spim<SPI3>>> = StaticCell::new();
 
 let spi_bus = SPI_BUS.init(Mutex::new(spim));
@@ -118,11 +118,11 @@ let spi_bus = SPI_BUS.init(Mutex::new(spim));
 
 This provides:
 
--   safe concurrent access
--   async compatibility
--   no data races
+- safe concurrent access
+- async compatibility
+- no data races
 
-------------------------------------------------------------------------
+---
 
 # 6. Concrete Hardware Initialization
 
@@ -130,7 +130,7 @@ Hardware initialization is performed in the application layer.
 
 Example:
 
-``` rust
+```rust
 let spim = spim::Spim::new_txonly(p.SPI3, Irqs, p.P0_13, p.P0_15, config);
 
 let cs = Output::new(
@@ -150,19 +150,19 @@ SPI bus\
 ↓\
 device wrapper
 
-------------------------------------------------------------------------
+---
 
 # 7. Driver Instantiation
 
 Once the SPI device wrapper is created, it can be passed to the driver.
 
-``` rust
+```rust
 let driver = Max7219::<_, LED_MATRIX_ROWS, LED_MATRIX_COLS>::new(spi_device);
 ```
 
 The compiler resolves the generic type automatically.
 
-------------------------------------------------------------------------
+---
 
 # 8. Async Task Integration
 
@@ -170,7 +170,7 @@ The driver can then be moved into an async task.
 
 Example:
 
-``` rust
+```rust
 #[embassy_executor::task]
 async fn button_receiver(
     receiver: Receiver<'static, ThreadModeRawMutex, Direction, 2>,
@@ -186,11 +186,11 @@ async fn button_receiver(
 
 The task:
 
--   receives events
--   updates internal state
--   communicates with hardware through the driver
+- receives events
+- updates internal state
+- communicates with hardware through the driver
 
-------------------------------------------------------------------------
+---
 
 # 9. Benefits of This Architecture
 
@@ -200,10 +200,10 @@ This layered design provides several advantages.
 
 The same driver can run on:
 
--   nRF52
--   STM32
--   RP2040
--   ESP32
+- nRF52
+- STM32
+- RP2040
+- ESP32
 
 Only the HAL initialization changes.
 
@@ -211,9 +211,9 @@ Only the HAL initialization changes.
 
 Drivers can be tested using:
 
--   SPI mocks
--   snapshot tests
--   simulated buffers
+- SPI mocks
+- snapshot tests
+- simulated buffers
 
 ### Clean separation of concerns
 
@@ -227,7 +227,7 @@ HAL implementation\
 ↓\
 hardware
 
-------------------------------------------------------------------------
+---
 
 # 10. General Driver Development Workflow
 
@@ -238,20 +238,20 @@ hardware
 5.  Integrate with HAL
 6.  Validate on real hardware
 
-------------------------------------------------------------------------
+---
 
 # 11. Key Embedded Rust Concepts Used
 
 This driver architecture uses several important Rust features:
 
--   generics
--   const generics
--   trait bounds
--   async/await
--   static memory (`StaticCell`)
--   mutex-based shared bus access
+- generics
+- const generics
+- trait bounds
+- async/await
+- static memory (`StaticCell`)
+- mutex-based shared bus access
 
-------------------------------------------------------------------------
+---
 
 # 12. Example Stack (Micro:bit v2)
 
@@ -269,7 +269,7 @@ Embassy SPIM driver\
 ↓\
 nRF52833 SPI3 peripheral
 
-------------------------------------------------------------------------
+---
 
 # Conclusion
 
