@@ -10,6 +10,7 @@ This repository documents my hands-on learning path in **Embedded Rust** develop
 ## Structure
 
 ```
+application-design/   → Contains docs and ideas for application design
 embedded-core/        → Contains generic platform independent code for various data structures and drivers
 microbit-v2/          → Contains projects specific to microbit-v2 platform
 stm32f3discovery/     → Contains projects specific to stm32 platform
