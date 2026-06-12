@@ -1,0 +1,8 @@
+{
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.cargo.allTargets": false,
+  "rust-analyzer.check.extraArgs": ["--target", "thumbv7em-none-eabi"],
+  "terminal.integrated.env.linux": {
+    "STM32L432_ROOT_DIR": "/home/dhruv/Programming/rust/embedded/rust-embedded-projects/stm32/stm32l432"
+  }
+}

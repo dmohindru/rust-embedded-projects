@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "STM32L432KC Debug",
+      "type": "probe-rs-debug",
+      "request": "launch",
+      "preLaunchTask": "Build Debug",
+      "chip": "STM32L432KCUx",
+      "connectUnderReset": true,
+      "speed": 1800,
+      "flashingConfig": {
+        "flashingEnabled": true
+      },
+      "coreConfigs": [
+        {
+          "coreIndex": 0,
+          "programBinary": "${workspaceFolder}/../../target/thumbv7em-none-eabi/debug/${workspaceFolderBasename}",
+          "svdFile": "${workspaceFolder}/../../STM32L432.svd",
+          "rttEnabled": true
+        }
+      ],
+      "consoleLogLevel": "Info", //Error, Warn, Info, Debug, Trace
+      "wireProtocol": "Swd"
+    }
+  ]
+}
