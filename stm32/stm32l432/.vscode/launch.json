@@ -7,7 +7,7 @@
       "request": "launch",
       "preLaunchTask": "Build Debug",
       "chip": "STM32L432KCUx",
-      "connectUnderReset": true,
+      "connectUnderReset": false,
       "speed": 1800,
       "flashingConfig": {
         "flashingEnabled": true

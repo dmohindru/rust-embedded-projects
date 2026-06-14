@@ -1,6 +1,6 @@
 [package]
 edition = "2024"
-name = "project01_buttons"
+name = "project02_buttons"
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
 
