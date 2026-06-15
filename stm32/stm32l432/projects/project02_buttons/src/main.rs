@@ -9,10 +9,7 @@ use embassy_sync::{
     mutex::{Mutex, MutexGuard},
 };
 use embassy_time::{Delay, Timer};
-use embedded_core::{
-    button::{ActiveLevel, DebouncedButton},
-    frame::Direction,
-};
+use embedded_core::{button::DebouncedButton, frame::Direction};
 use {defmt_rtt as _, panic_probe as _};
 
 type ButtonStateType = Mutex<ThreadModeRawMutex, Direction>;
@@ -36,14 +33,14 @@ async fn log_button_state() {
     }
 }
 
-#[embassy_executor::task]
-async fn button_task(mut button: DebouncedButton<ExtiInput<'static>, Delay>) {
+#[embassy_executor::task(pool_size = 2)]
+async fn button_task(mut button: DebouncedButton<ExtiInput<'static>, Delay>, direction: Direction) {
     button
         .wait(|| async {
             let mut button_state: MutexGuard<'_, ThreadModeRawMutex, Direction> =
                 BUTTON_STATE.lock().await;
-            *button_state = (*button_state).toggle();
-            info!("Moving state to {}", *button_state);
+            *button_state = direction;
+            info!("Moving state to {}", direction);
         })
         .await;
 }
@@ -52,14 +49,21 @@ async fn button_task(mut button: DebouncedButton<ExtiInput<'static>, Delay>) {
 async fn main(spawner: Spawner) {
     let config = Config::default();
     let p = embassy_stm32::init(config);
-    let btn = ExtiInput::new(p.PA0, p.EXTI0, Pull::None);
-    let debounced_btn = DebouncedButton::new(btn, Delay, 20).with_active_level(ActiveLevel::High);
+    let btn_left = ExtiInput::new(p.PB4, p.EXTI4, Pull::Up);
+    let debounced_btn_left = DebouncedButton::new(btn_left, Delay, 20);
+
+    let btn_right = ExtiInput::new(p.PB3, p.EXTI3, Pull::Up);
+    let debounced_btn_right = DebouncedButton::new(btn_right, Delay, 20);
 
     spawner
         .spawn(log_button_state())
         .expect("Failed to spawn log button state task");
 
     spawner
-        .spawn(button_task(debounced_btn))
-        .expect("Failed to spawn button task");
+        .spawn(button_task(debounced_btn_left, Direction::Left))
+        .expect("Failed to spawn left button task");
+
+    spawner
+        .spawn(button_task(debounced_btn_right, Direction::Right))
+        .expect("Failed to spawn right button task");
 }
