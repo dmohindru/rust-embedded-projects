@@ -3,7 +3,13 @@
 
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_stm32::{Config, exti::ExtiInput, gpio::Pull};
+use embassy_stm32::{
+    Config, bind_interrupts,
+    exti::{self, ExtiInput},
+    gpio::Pull,
+    interrupt,
+    mode::Async,
+};
 use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex,
     mutex::{Mutex, MutexGuard},
@@ -14,6 +20,14 @@ use {defmt_rtt as _, panic_probe as _};
 
 type ButtonStateType = Mutex<ThreadModeRawMutex, Direction>;
 static BUTTON_STATE: ButtonStateType = Mutex::new(Direction::Left);
+
+bind_interrupts!(struct LeftBtnIrqs {
+    EXTI4 => exti::InterruptHandler<interrupt::typelevel::EXTI4>;
+});
+
+bind_interrupts!(struct RightBtnIrqs {
+    EXTI3 => exti::InterruptHandler<interrupt::typelevel::EXTI3>;
+});
 
 #[embassy_executor::task]
 async fn log_button_state() {
@@ -34,7 +48,10 @@ async fn log_button_state() {
 }
 
 #[embassy_executor::task(pool_size = 2)]
-async fn button_task(mut button: DebouncedButton<ExtiInput<'static>, Delay>, direction: Direction) {
+async fn button_task(
+    mut button: DebouncedButton<ExtiInput<'static, Async>, Delay>,
+    direction: Direction,
+) {
     button
         .wait(|| async {
             let mut button_state: MutexGuard<'_, ThreadModeRawMutex, Direction> =
@@ -49,10 +66,10 @@ async fn button_task(mut button: DebouncedButton<ExtiInput<'static>, Delay>, dir
 async fn main(spawner: Spawner) {
     let config = Config::default();
     let p = embassy_stm32::init(config);
-    let btn_left = ExtiInput::new(p.PB4, p.EXTI4, Pull::Up);
+    let btn_left = ExtiInput::new(p.PB4, p.EXTI4, Pull::Up, LeftBtnIrqs);
     let debounced_btn_left = DebouncedButton::new(btn_left, Delay, 20);
 
-    let btn_right = ExtiInput::new(p.PB3, p.EXTI3, Pull::Up);
+    let btn_right = ExtiInput::new(p.PB3, p.EXTI3, Pull::Up, RightBtnIrqs);
     let debounced_btn_right = DebouncedButton::new(btn_right, Delay, 20);
 
     spawner

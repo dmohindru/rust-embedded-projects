@@ -126,7 +126,7 @@ async fn main(spawner: Spawner) {
     let i2c_bus = I2C_BUS.init(i2c_bus_mutex);
 
     // I2c Device backed by bus
-    let i2c_device = I2cDevice::new(i2c_bus);
+    let i2c_device = I2cDevice::new(&i2c_bus);
 
     // Ht16K33 Device
     let mut driver: DisplayDriver = Ht16K33::new(i2c_device, HT16K33_DEVICE_ADDR);
