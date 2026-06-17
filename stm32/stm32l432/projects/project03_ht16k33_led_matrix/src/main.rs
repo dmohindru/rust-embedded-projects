@@ -20,7 +20,10 @@ use embassy_sync::{
 };
 use embassy_time::{Delay, Timer};
 use embedded_core::{
-    button::DebouncedButton, cursor::StepCursorCircular, display_driver::Ht16K33, frame::Direction,
+    button::DebouncedButton,
+    cursor::StepCursorCircular,
+    display_driver::Ht16K33,
+    frame::{Direction, FrameCursorCircular, decode_frames},
 };
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
@@ -72,35 +75,79 @@ bind_interrupts!(struct RightBtnIrqs {
     EXTI3 => exti::InterruptHandler<interrupt::typelevel::EXTI3>;
 });
 
-// #[embassy_executor::task]
-// async fn log_button_state() {
-//     loop {
-//         /*
-//         1. The task asynchronously waits until it can acquire the mutex.
-//         2. Once acquired, it gets a guard to the protected data, dereferences it, and copies the value out.
-//         3. When the block ends, the guard is dropped automatically, releasing the mutex so other tasks can use it.
-//          */
-//         let button_state = {
-//             let button_mutex: MutexGuard<'_, ThreadModeRawMutex, Direction> =
-//                 BUTTON_STATE.lock().await;
-//             *button_mutex
-//         };
-//         info!("Direction: {}", button_state);
-//         Timer::after_secs(1).await;
-//     }
-// }
+//--------------------
+// Left Button Task
+//--------------------
+#[embassy_executor::task]
+async fn left_button_task(mut button: DebouncedButton<ExtiInput<'static, Async>, Delay>) {
+    button
+        .wait(|| async {
+            {
+                let mut direction: MutexGuard<'_, ThreadModeRawMutex, Direction> =
+                    DIRECTION.lock().await;
+                info!("Left button pressed. Direction {}", *direction);
+                *direction = direction.toggle();
+            }
+        })
+        .await;
+}
 
-// #[embassy_executor::task(pool_size = 2)]
-// async fn button_task(mut button: DebouncedButton<ExtiInput<'static>, Delay>, direction: Direction) {
-//     button
-//         .wait(|| async {
-//             let mut button_state: MutexGuard<'_, ThreadModeRawMutex, Direction> =
-//                 BUTTON_STATE.lock().await;
-//             *button_state = direction;
-//             info!("Moving state to {}", direction);
-//         })
-//         .await;
-// }
+//--------------------
+// Right Button Task
+//--------------------
+#[embassy_executor::task]
+async fn right_button_task(
+    mut button: DebouncedButton<ExtiInput<'static, Async>, Delay>,
+    cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
+) {
+    button
+        .wait(|| async {
+            {
+                info!("Right button pressed");
+                let mut step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
+                    cursor_mutex.lock().await;
+                step_cursor.move_step(Direction::Right);
+            }
+        })
+        .await;
+}
+
+//--------------------
+// Timer Task
+//--------------------
+#[embassy_executor::task]
+async fn timer_task(
+    mut display_driver: DisplayDriver,
+    mut frame_cursor: FrameCursorCircular<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>,
+    step_cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
+) {
+    loop {
+        // ---- 1. Read delay from step cursor ----
+        let delay_ms = {
+            let step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
+                step_cursor_mutex.lock().await;
+            step_cursor.current_value()
+        };
+
+        // ---- 2. Sleep (NO LOCKS HELD) ----
+        Timer::after_millis(delay_ms as u64).await;
+        info!("Running timer task delay {}ms", &delay_ms);
+
+        // ---- 3. Read direction from mutex ----
+        let direction = {
+            let direction_guard: MutexGuard<'static, ThreadModeRawMutex, Direction> =
+                DIRECTION.lock().await;
+            *direction_guard
+        };
+
+        // ---- 4. Move the frame cursor ----
+        frame_cursor.move_index(direction);
+
+        // ---- 5. Render frame ----
+        let frame = frame_cursor.current_frame();
+        display_driver.write_bitmap(&frame).await.unwrap();
+    }
+}
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -126,12 +173,12 @@ async fn main(spawner: Spawner) {
     let i2c_bus = I2C_BUS.init(i2c_bus_mutex);
 
     // I2c Device backed by bus
-    let i2c_device = I2cDevice::new(&i2c_bus);
+    let i2c_device = I2cDevice::new(i2c_bus);
 
     // Ht16K33 Device
     let mut driver: DisplayDriver = Ht16K33::new(i2c_device, HT16K33_DEVICE_ADDR);
 
-    // ------------------------I2C Config ends ------------------
+    //-------------------------Left/Right Buttons --------------
 
     let btn_left = ExtiInput::new(p.PB4, p.EXTI4, Pull::Up, LeftBtnIrqs);
     let debounced_btn_left = DebouncedButton::new(btn_left, Delay, 20);
@@ -139,15 +186,31 @@ async fn main(spawner: Spawner) {
     let btn_right = ExtiInput::new(p.PB3, p.EXTI3, Pull::Up, RightBtnIrqs);
     let debounced_btn_right = DebouncedButton::new(btn_right, Delay, 20);
 
-    // spawner
-    //     .spawn(log_button_state())
-    //     .expect("Failed to spawn log button state task");
+    //-----------------------Frame Data--------------------------
+    let frames = decode_frames::<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>(FRAME_BYTES);
+    let frame_cursor: FrameCursorCircular<NUM_FRAMES, _, _> = FrameCursorCircular::new(&frames);
 
-    // spawner
-    //     .spawn(button_task(debounced_btn_left, Direction::Left))
-    //     .expect("Failed to spawn left button task");
+    driver.initialize().await.unwrap();
+    info!("Initialization commands written");
+    Timer::after_millis(100).await;
 
-    // spawner
-    //     .spawn(button_task(debounced_btn_right, Direction::Right))
-    //     .expect("Failed to spawn right button task");
+    let step_cursor = StepCursorCircular::new(2000, 500, 250, 7);
+    let step_cursor_mutex = STEP_CURSOR.init(Mutex::new(step_cursor));
+
+    driver
+        .write_bitmap(frame_cursor.current_frame())
+        .await
+        .unwrap();
+
+    spawner
+        .spawn(left_button_task(debounced_btn_left))
+        .expect("Failed to spawn left button task");
+
+    spawner
+        .spawn(right_button_task(debounced_btn_right, step_cursor_mutex))
+        .expect("Failed to spawn right button task");
+
+    spawner
+        .spawn(timer_task(driver, frame_cursor, step_cursor_mutex))
+        .expect("Failed to spawn receiver task");
 }
