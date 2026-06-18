@@ -35,8 +35,8 @@ dhruv.bin --> dhruv, num frames: 45
 poonam.bin --> poonam, num frames: 54
 */
 
-static FRAME_BYTES: &[u8] = include_bytes!("../assets/poonam.bin");
-const NUM_FRAMES: usize = 54;
+static FRAME_BYTES: &[u8] = include_bytes!("../assets/dhruv.bin");
+const NUM_FRAMES: usize = 45;
 static HT16K33_DEVICE_ADDR: u8 = 0x70;
 
 const LED_MATRIX_ROWS: usize = 8;
