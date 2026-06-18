@@ -4,6 +4,7 @@ members = [
   "projects/project00_hello_world",
   "projects/project01_blinky",
   "projects/project02_buttons",
+  "projects/project03_ht16k33_led_matrix",
 ]
 
 [workspace.dependencies]
@@ -32,7 +33,7 @@ embassy-futures = "0.1.2"
 embassy-embedded-hal = "0.5.0"
 
 # stm32l432kc (platform)
-embassy-stm32 = { version = "0.4.0", features = [
+embassy-stm32 = { version = "0.6.0", features = [
   "defmt",
   "stm32l432kc",
   "unstable-pac",

@@ -34,14 +34,13 @@ where
     }
 
     pub async fn write_bitmap(&mut self, frame: &Frame<R, C>) -> Result<(), D::Error> {
-        let mut data = [0u8; 17]; // HT16K33 max is 16 bytes + 1 command
+        let mut data = [0u8; 17];
         data[0] = 0x00;
-        for r in 0..R {
-            let row = (*frame.get_row(r) & 0xFF) as u8;
-            data[r + 1] = row;
+        for row in 0..8 {
+            data[1 + row * 2] = (*frame.get_row(row) as u8).reverse_bits();
+            data[1 + row * 2 + 1] = 0;
         }
-        self.device.write(self.address, &data[0..R + 1]).await?;
-        Ok(())
+        self.device.write(self.address, &data).await
     }
 }
 
@@ -113,7 +112,8 @@ mod tests {
 
         frame_write_transaction.push(addr_ptr_command);
         for data in frame_data {
-            frame_write_transaction.push(data as u8);
+            frame_write_transaction.push((data as u8).reverse_bits());
+            frame_write_transaction.push(0);
         }
         let expectations = build_expected_write_transaction(vec![frame_write_transaction], false);
         let mut htc16kk33_device = get_ht16k33_device(&expectations);
@@ -130,7 +130,8 @@ mod tests {
         let mut frame_write_transaction = Vec::<u8>::new();
         frame_write_transaction.push(addr_ptr_command);
         for data in frame_data {
-            frame_write_transaction.push(data as u8);
+            frame_write_transaction.push((data as u8).reverse_bits());
+            frame_write_transaction.push(0);
         }
         let expectations = build_expected_write_transaction(vec![frame_write_transaction], true);
         let mut ht16k33_device = get_ht16k33_device(&expectations);
