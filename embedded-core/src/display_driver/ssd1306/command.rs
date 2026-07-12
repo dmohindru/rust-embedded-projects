@@ -183,7 +183,33 @@ impl Encode for Command {
                     2
                 }
             },
-            _ => todo!(),
+            Command::SetClockDivider(data) => {
+                out[0] = 0xD5;
+                out[1] = *data;
+                2
+            }
+            Command::SetPreCharge(data) => {
+                out[0] = 0xD9;
+                out[1] = *data;
+                2
+            }
+            Command::SetVComLevel => {
+                out[0] = 0xDB;
+                out[1] = 0x40;
+                2
+            }
+            Command::SetChargePump(power_mode) => match power_mode {
+                PowerMode::ExternalVcc => {
+                    out[0] = 0x8D;
+                    out[1] = 0x10;
+                    2
+                }
+                PowerMode::InternalChargePump => {
+                    out[0] = 0x8D;
+                    out[1] = 0x14;
+                    2
+                }
+            },
         };
         length
     }
@@ -448,6 +474,81 @@ mod tests {
         assert_eq!(0xDA, out[0]);
         // Second byte
         assert_eq!(0x02, out[1]);
+    }
+
+    #[test]
+    fn should_provide_set_clock_divider_encoding() {
+        let command = Command::SetClockDivider(0x00);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xD5, out[0]);
+        // Second byte
+        assert_eq!(0x00, out[1]);
+
+        let command = Command::SetClockDivider(0xFF);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xD5, out[0]);
+        // Second byte
+        assert_eq!(0xFF, out[1]);
+    }
+
+    #[test]
+    fn should_provide_set_pre_charge_encoding() {
+        let command = Command::SetPreCharge(0x00);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xD9, out[0]);
+        // Second byte
+        assert_eq!(0x00, out[1]);
+
+        let command = Command::SetPreCharge(0xFF);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xD9, out[0]);
+        // Second byte
+        assert_eq!(0xFF, out[1]);
+    }
+
+    #[test]
+    fn should_provide_set_vcomh_level_encoding() {
+        let command = Command::SetVComLevel;
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xDB, out[0]);
+        // Second byte
+        assert_eq!(0x40, out[1]);
+    }
+
+    #[test]
+    fn should_provide_set_charge_pump_encoding() {
+        let command = Command::SetChargePump(PowerMode::ExternalVcc);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0x8D, out[0]);
+        // Second byte
+        assert_eq!(0x10, out[1]);
+
+        let command = Command::SetChargePump(PowerMode::InternalChargePump);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0x8D, out[0]);
+        // Second byte
+        assert_eq!(0x14, out[1]);
     }
 }
 
