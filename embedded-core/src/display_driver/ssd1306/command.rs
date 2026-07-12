@@ -79,6 +79,55 @@ impl Encode for Command {
                     1
                 }
             },
+            Command::SetDisplayMode(mode) => match mode {
+                DisplayMode::Inverted => {
+                    out[0] = 0xA7;
+                    1
+                }
+                DisplayMode::Normal => {
+                    out[0] = 0xA6;
+                    1
+                }
+            },
+            Command::EnableDisplay(enable) => match enable {
+                true => {
+                    out[0] = 0xAF;
+                    1
+                }
+                false => {
+                    out[0] = 0xAE;
+                    1
+                }
+            },
+            Command::SetMemoryAddressMode(mode) => match mode {
+                AddressMode::Horizontal => {
+                    out[0] = 0x20;
+                    out[1] = 0x00;
+                    2
+                }
+                AddressMode::Vertical => {
+                    out[0] = 0x20;
+                    out[1] = 0x01;
+                    2
+                }
+                AddressMode::Page => {
+                    out[0] = 0x20;
+                    out[1] = 0x02;
+                    2
+                }
+            },
+            Command::SetColumnAddress(addr) => {
+                out[0] = 0x21;
+                out[1] = 0x7F & addr[0];
+                out[2] = 0x7F & addr[1];
+                3
+            }
+            Command::SetPageAddress(addr) => {
+                out[0] = 0x22;
+                out[1] = 0x07 & addr[0];
+                out[2] = 0x07 & addr[1];
+                3
+            }
             _ => todo!(),
         };
         length
@@ -143,14 +192,72 @@ mod tests {
         let len = command.encode(&mut out);
         assert_eq!(1, len);
         // First byte
-        assert_eq!(0xAE, out[0]);
+        assert_eq!(0xAF, out[0]);
 
         let command = Command::EnableDisplay(false);
         let mut out: [u8; 4] = [0; 4];
         let len = command.encode(&mut out);
         assert_eq!(1, len);
         // First byte
-        assert_eq!(0xAF, out[0]);
+        assert_eq!(0xAE, out[0]);
+    }
+
+    #[test]
+    fn should_provide_set_memory_address_encoding() {
+        let command = Command::SetMemoryAddressMode(AddressMode::Horizontal);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0x20, out[0]);
+        // Second byte
+        assert_eq!(0x00, out[1]);
+
+        let command = Command::SetMemoryAddressMode(AddressMode::Vertical);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0x20, out[0]);
+        // Second byte
+        assert_eq!(0x01, out[1]);
+
+        let command = Command::SetMemoryAddressMode(AddressMode::Page);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0x20, out[0]);
+        // Second byte
+        assert_eq!(0x02, out[1]);
+    }
+
+    #[test]
+    fn should_provide_set_column_address_encoding() {
+        let command = Command::SetColumnAddress([0x00, 0xFF]);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(3, len);
+        // First byte
+        assert_eq!(0x21, out[0]);
+        // Second byte
+        assert_eq!(0x00, out[1]);
+        // Third byte
+        assert_eq!(0x7F, out[2]);
+    }
+
+    #[test]
+    fn should_provide_set_page_address_encoding() {
+        let command = Command::SetPageAddress([0x00, 0xFF]);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(3, len);
+        // First byte
+        assert_eq!(0x22, out[0]);
+        // Second byte
+        assert_eq!(0x00, out[1]);
+        // Third byte
+        assert_eq!(0x07, out[2]);
     }
 }
 
