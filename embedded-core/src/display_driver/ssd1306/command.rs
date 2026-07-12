@@ -128,6 +128,61 @@ impl Encode for Command {
                 out[2] = 0x07 & addr[1];
                 3
             }
+            Command::SetDisplayStartLine(offset) => {
+                out[0] = 0x40 | (0x3F & offset);
+                1
+            }
+            Command::SetSegmentRemap(remap_mode) => match remap_mode {
+                SegmentRemap::Normal => {
+                    out[0] = 0xA0;
+                    1
+                }
+                SegmentRemap::Remapped => {
+                    out[0] = 0xA1;
+                    1
+                }
+            },
+            Command::SetMultiplexRatio(ratio) => {
+                if *ratio > 0x00 && *ratio < 0x0F {
+                    panic!("Invalid set multiplex ratio argument")
+                } else {
+                    out[0] = 0xA8;
+                    out[1] = 0x3F & ratio;
+                    2
+                }
+            }
+            Command::SetScanDirection(direction) => match direction {
+                ScanDirection::TopToBottom => {
+                    out[0] = 0xC0;
+                    1
+                }
+                ScanDirection::BottomToTop => {
+                    out[0] = 0xC8;
+                    1
+                }
+            },
+            Command::SetDisplayOffset(offset) => {
+                out[0] = 0xD3;
+                out[1] = 0x3F & offset;
+                2
+            }
+            Command::SetComPinConfig(config) => match config {
+                DisplaySize::Display128x64 => {
+                    out[0] = 0xDA;
+                    out[1] = 0x12;
+                    2
+                }
+                DisplaySize::Display128x32 => {
+                    out[0] = 0xDA;
+                    out[1] = 0x02;
+                    2
+                }
+                DisplaySize::Display96x16 => {
+                    out[0] = 0xDA;
+                    out[1] = 0x02;
+                    2
+                }
+            },
             _ => todo!(),
         };
         length
@@ -258,6 +313,141 @@ mod tests {
         assert_eq!(0x00, out[1]);
         // Third byte
         assert_eq!(0x07, out[2]);
+    }
+
+    #[test]
+    fn should_provide_set_display_start_line_encoding() {
+        let command = Command::SetDisplayStartLine(0xFF);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0x7F, out[0]);
+
+        let command = Command::SetDisplayStartLine(0x00);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0x40, out[0]);
+    }
+
+    #[test]
+    fn should_provide_set_segment_remap_encoding() {
+        let command = Command::SetSegmentRemap(SegmentRemap::Normal);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0xA0, out[0]);
+
+        let command = Command::SetSegmentRemap(SegmentRemap::Remapped);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0xA1, out[0]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid set multiplex ratio argument")]
+    fn should_panic_for_invalid_set_multiplex_ration_encoding() {
+        let command = Command::SetMultiplexRatio(0x00);
+        let mut out: [u8; 4] = [0; 4];
+        command.encode(&mut out);
+
+        let command = Command::SetMultiplexRatio(0x0E);
+        let mut out: [u8; 4] = [0; 4];
+        command.encode(&mut out);
+    }
+
+    #[test]
+    fn should_provide_set_multiplex_ratio_encoding() {
+        let command = Command::SetMultiplexRatio(0x0F);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xA8, out[0]);
+        // Second byte
+        assert_eq!(0x0F, out[1]);
+
+        let command = Command::SetMultiplexRatio(0xFF);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xA8, out[0]);
+        // Second byte
+        assert_eq!(0x3F, out[1]);
+    }
+
+    #[test]
+    fn should_provide_set_scan_direction_encoding() {
+        let command = Command::SetScanDirection(ScanDirection::TopToBottom);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0xC0, out[0]);
+
+        let command = Command::SetScanDirection(ScanDirection::BottomToTop);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0xC8, out[0]);
+    }
+
+    #[test]
+    fn should_provide_set_display_offset_encoding() {
+        let command = Command::SetDisplayOffset(0x00);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xD3, out[0]);
+        // Second byte
+        assert_eq!(0x00, out[1]);
+
+        let command = Command::SetDisplayOffset(0xFF);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xD3, out[0]);
+        // Second byte
+        assert_eq!(0x3F, out[1]);
+    }
+
+    #[test]
+    fn should_provide_set_com_pin_config_encoding() {
+        let command = Command::SetComPinConfig(DisplaySize::Display128x64);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xDA, out[0]);
+        // Second byte
+        assert_eq!(0x12, out[1]);
+
+        let command = Command::SetComPinConfig(DisplaySize::Display128x32);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xDA, out[0]);
+        // Second byte
+        assert_eq!(0x02, out[1]);
+
+        let command = Command::SetComPinConfig(DisplaySize::Display96x16);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        // First byte
+        assert_eq!(0xDA, out[0]);
+        // Second byte
+        assert_eq!(0x02, out[1]);
     }
 }
 
