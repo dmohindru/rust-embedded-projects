@@ -1,3 +1,4 @@
+mod frame_buffer;
 mod ht16k33_driver;
 mod led_matrix_driver;
 mod max7219_driver;
