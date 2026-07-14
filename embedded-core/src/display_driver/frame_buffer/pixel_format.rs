@@ -39,11 +39,18 @@ impl PixelFormat for BinaryPixelFormat {
     const BITS_PER_PIXEL: usize = 1;
 
     fn encode(color: Self::Color) -> u32 {
-        todo!()
+        match color {
+            BinaryColor::On => 1,
+            BinaryColor::Off => 0,
+        }
     }
 
     fn decode(bits: u32) -> Self::Color {
-        todo!()
+        if bits == 1 {
+            BinaryColor::On
+        } else {
+            BinaryColor::Off
+        }
     }
 }
 
