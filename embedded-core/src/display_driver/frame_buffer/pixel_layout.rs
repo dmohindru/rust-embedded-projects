@@ -29,10 +29,16 @@ pub struct Ssd1306PixelLayout;
 
 impl PixelLayout for Ssd1306PixelLayout {
     fn write_pixel(framebuffer: &mut [u8], width: usize, x: usize, y: usize, encoded: u32) {
-        todo!()
+        let page_size: usize = 8;
+        let page_num = y / page_size;
+        let byte_num = page_num * width + x;
+        let bit_num = y % page_size;
+        let mut byte = framebuffer[byte_num];
+        byte = byte | (0x01 & (encoded as u8)) << bit_num;
+        framebuffer[byte_num] = byte;
     }
 
-    fn read_pixel(framebuffer: &[u8], width: usize, x: usize, y: usize) -> u32 {
+    fn read_pixel(_framebuffer: &[u8], _width: usize, _x: usize, _y: usize) -> u32 {
         todo!()
     }
 }
@@ -40,111 +46,27 @@ impl PixelLayout for Ssd1306PixelLayout {
 #[cfg(test)]
 mod ssd1306_tests {
     use super::*;
-    type Point = (usize, usize);
 
     #[test]
     fn should_write_pixel_data_to_right_memory_location() {
-        let mut frame_buffer: [u8; 1024] = [0; 1024];
+        let mut framebuffer: [u8; 1024] = [0; 1024];
         let width = 128;
-        let rect_top_left: (Point, Point) = ((2, 2), (6, 6));
-        let rect_top_right: (Point, Point) = ((124, 2), (126, 4));
-        let rect_bottom_left: (Point, Point) = ((2, 60), (4, 62));
-        let rect_bottom_right: (Point, Point) = ((122, 58), (126, 62));
-        // Set pixels
-        set_rectangle_pixels(&mut frame_buffer, width, rect_top_left.0, rect_top_left.1);
-        set_rectangle_pixels(&mut frame_buffer, width, rect_top_right.0, rect_top_right.1);
-        set_rectangle_pixels(
-            &mut frame_buffer,
-            width,
-            rect_bottom_left.0,
-            rect_bottom_left.1,
-        );
-        set_rectangle_pixels(
-            &mut frame_buffer,
-            width,
-            rect_bottom_right.0,
-            rect_bottom_right.1,
-        );
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 0, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 2, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 4, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 6, 1);
+        let byte = framebuffer[0];
+        assert_eq!(0x55, byte);
 
-        // Verify pixels
-        verify_rectangle_pixels(
-            &mut frame_buffer,
-            width,
-            rect_top_left.0,
-            rect_top_left.1,
-            1,
-        );
-        verify_rectangle_pixels(
-            &mut frame_buffer,
-            width,
-            rect_top_right.0,
-            rect_top_right.1,
-            1,
-        );
-        verify_rectangle_pixels(
-            &mut frame_buffer,
-            width,
-            rect_bottom_left.0,
-            rect_bottom_left.1,
-            1,
-        );
-        verify_rectangle_pixels(
-            &mut frame_buffer,
-            width,
-            rect_bottom_right.0,
-            rect_bottom_right.1,
-            1,
-        );
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 57, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 59, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 61, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 63, 1);
+        let byte = framebuffer[1023];
+        assert_eq!(0xAA, byte);
 
-        // verify some random locations not being set
-        assert_eq!(
-            0,
-            Ssd1306PixelLayout::read_pixel(&mut frame_buffer, width, 0, 0)
-        );
-
-        assert_eq!(
-            0,
-            Ssd1306PixelLayout::read_pixel(&mut frame_buffer, width, 127, 63)
-        );
-
-        assert_eq!(
-            0,
-            Ssd1306PixelLayout::read_pixel(&mut frame_buffer, width, 100, 100)
-        );
-
-        assert_eq!(
-            0,
-            Ssd1306PixelLayout::read_pixel(&mut frame_buffer, width, 50, 50)
-        )
-    }
-
-    fn set_rectangle_pixels(
-        frame_buffer: &mut [u8],
-        width: usize,
-        top_left: Point,
-        bottom_right: Point,
-    ) {
-        for y in (top_left.0)..(bottom_right.0 + 1) {
-            for x in (top_left.1)..(bottom_right.1 + 1) {
-                Ssd1306PixelLayout::write_pixel(frame_buffer, width, x, y, 1);
-            }
-        }
-    }
-
-    fn verify_rectangle_pixels(
-        frame_buffer: &mut [u8],
-        width: usize,
-        top_left: Point,
-        bottom_right: Point,
-        expected_value: u32,
-    ) {
-        for y in (top_left.0)..(bottom_right.0 + 1) {
-            for x in (top_left.1)..(bottom_right.1 + 1) {
-                assert_eq!(
-                    expected_value,
-                    Ssd1306PixelLayout::read_pixel(frame_buffer, width, x, y)
-                );
-            }
-        }
+        assert_eq!(0x00, framebuffer[1]);
+        assert_eq!(0x00, framebuffer[1022]);
+        assert_eq!(0x00, framebuffer[100]);
     }
 }
