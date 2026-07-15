@@ -32,4 +32,8 @@ where
 
         P::decode(encoded)
     }
+
+    pub fn frame_data(&self) -> &[u8] {
+        &self.pixels
+    }
 }
