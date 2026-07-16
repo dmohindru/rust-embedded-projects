@@ -4,27 +4,6 @@ pub trait PixelLayout {
     fn read_pixel(framebuffer: &[u8], width: usize, x: usize, y: usize) -> u32;
 }
 
-struct DisplayDimensions {
-    x: usize,
-    y: usize,
-}
-
-pub enum DisplaySize {
-    Display128x64, // DA 12
-    Display128x32, // DA 02
-    Display96x16,  // DA 02
-}
-
-impl DisplaySize {
-    fn screen_size(&self) -> DisplayDimensions {
-        match self {
-            DisplaySize::Display128x32 => DisplayDimensions { x: 32, y: 128 },
-            DisplaySize::Display128x64 => DisplayDimensions { x: 64, y: 128 },
-            DisplaySize::Display96x16 => DisplayDimensions { x: 16, y: 96 },
-        }
-    }
-}
-
 pub struct Ssd1306PixelLayout;
 
 impl PixelLayout for Ssd1306PixelLayout {

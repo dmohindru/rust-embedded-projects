@@ -1,4 +1,8 @@
 use crate::display_driver::Encode;
+pub enum CommandMode {
+    Control,
+    Data,
+}
 pub enum DisplayMode {
     Normal,
     Inverted,
@@ -36,6 +40,7 @@ pub enum DisplaySize {
     Display96x16,  // DA 02
 }
 pub enum Command {
+    ControlByte(CommandMode),
     /// Fundamental Commands
     SetContrast(u8),
     SetDisplayMode(DisplayMode),
@@ -64,6 +69,16 @@ pub enum Command {
 impl Encode for Command {
     fn encode(&self, out: &mut [u8]) -> usize {
         let length: usize = match self {
+            Command::ControlByte(mode) => match mode {
+                CommandMode::Control => {
+                    out[0] = 0x00;
+                    1
+                }
+                CommandMode::Data => {
+                    out[0] = 0x40;
+                    1
+                }
+            },
             Command::SetContrast(level) => {
                 out[0] = 0x81;
                 out[1] = *level;
