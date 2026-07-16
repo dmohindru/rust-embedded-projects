@@ -24,19 +24,19 @@ where
         }
     }
 
-    pub fn init(&mut self) -> Result<(), D::Error> {
+    pub async fn initialize(&mut self) -> Result<(), D::Error> {
         todo!()
     }
 
-    pub fn flush(&mut self) -> Result<(), D::Error> {
+    pub async fn flush(&mut self) -> Result<(), D::Error> {
         todo!()
     }
 
-    pub fn write_commands(&mut self, commands: &[u8]) -> Result<(), D::Error> {
+    pub async fn write_commands(&mut self, commands: &[u8]) -> Result<(), D::Error> {
         todo!()
     }
 
-    pub fn write_data(&mut self, data: &[u8]) -> Result<(), D::Error> {
+    pub async fn write_data(&mut self, data: &[u8]) -> Result<(), D::Error> {
         todo!()
     }
 
@@ -63,24 +63,47 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::display_driver::{ssd1306_driver::command::Command, Encode};
+    use crate::display_driver::{
+        ssd1306_driver::command::{
+            AddressMode, Command, CommandMode, DisplayMode, DisplaySize::Display128x64, PowerMode,
+            ScanDirection, SegmentRemap,
+        },
+        Encode,
+    };
     use embedded_hal::i2c::ErrorKind;
     use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTransaction};
     static DEVICE_ADDRESS: u8 = 0x3D;
 
     #[tokio::test]
     async fn should_initialize_device_with_proper_commands() {
-        // let mut out_buffer: [u8; 4] = [0; 4];
-        // let mut len = Command::EnableDisplay(false).encode(&mut out_buffer);
-        // let enable_display_command = vec![out_buffer[0..len]];
-        let expections = build_expected_write_transaction(
+        let expectations = build_expected_write_transaction(
             vec![
+                encode_command(Command::ControlByte(CommandMode::Control)),
                 encode_command(Command::EnableDisplay(false)),
                 encode_command(Command::SetClockDivider(0x80)),
                 encode_command(Command::SetMultiplexRatio(0x3F)),
+                encode_command(Command::SetDisplayOffset(0x00)),
+                encode_command(Command::SetDisplayStartLine(0x00)),
+                encode_command(Command::SetChargePump(PowerMode::InternalChargePump)),
+                encode_command(Command::SetMemoryAddressMode(AddressMode::Horizontal)),
+                // TODO may need to change these commands
+                encode_command(Command::SetSegmentRemap(SegmentRemap::Remapped)),
+                encode_command(Command::SetScanDirection(ScanDirection::BottomToTop)),
+                // TODO ends here
+                encode_command(Command::SetComPinConfig(Display128x64)),
+                encode_command(Command::SetContrast(0xCF)),
+                encode_command(Command::SetPreCharge(0xF1)),
+                encode_command(Command::SetVComLevel),
+                encode_command(Command::EnableRamContent(true)),
+                encode_command(Command::SetDisplayMode(DisplayMode::Normal)),
+                encode_command(Command::EnableDisplay(true)),
             ],
             false,
         );
+
+        let mut ssd1306_driver = get_ssd1306_device(&expectations);
+        ssd1306_driver.initialize().await.unwrap();
+        ssd1306_driver.free().done();
     }
 
     fn get_ssd1306_device(expectations: &Vec<I2cTransaction>) -> Ssd1306<I2cMock, 128, 64, 1024> {

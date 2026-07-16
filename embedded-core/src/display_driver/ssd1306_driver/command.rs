@@ -29,7 +29,7 @@ pub enum ComScanDirection {
 }
 
 // See section 2.1 Command Table for Charge Bump Setting
-enum PowerMode {
+pub enum PowerMode {
     InternalChargePump,
     ExternalVcc,
 }
@@ -234,7 +234,23 @@ impl Encode for Command {
 mod tests {
     use super::*;
 
-    // static mut out: [u8; 4] = [0; 4];
+    #[test]
+    fn should_provide_control_byte_encoding() {
+        let command = Command::ControlByte(CommandMode::Control);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0x00, out[0]);
+
+        let command = Command::ControlByte(CommandMode::Data);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        // First byte
+        assert_eq!(0x40, out[0]);
+    }
+
     #[test]
     fn should_provide_set_contrast_encoding() {
         let command = Command::SetContrast(0xF0);
