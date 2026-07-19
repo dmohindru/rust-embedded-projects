@@ -6,12 +6,21 @@ use crate::display_driver::{
     },
     Encode,
 };
+use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_hal_async::i2c::I2c;
 
 pub type Ssd1306FrameBuffer<const WIDTH: usize, const HEIGHT: usize, const BYTES: usize> =
     FrameBuffer<WIDTH, HEIGHT, BYTES, Ssd1306PixelLayout, BinaryPixelFormat>;
-pub struct Ssd1306<D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize>
-where
+
+pub type Ssd1306_128x64<D> = Ssd1306<D, 128, 64, 1024, 1025>;
+
+pub struct Ssd1306<
+    D,
+    const WIDTH: usize,
+    const HEIGHT: usize,
+    const BYTES: usize,
+    const TX_BYTES: usize,
+> where
     D: I2c,
 {
     device: D,
@@ -20,8 +29,8 @@ where
     frame_buffer: Ssd1306FrameBuffer<WIDTH, HEIGHT, BYTES>,
 }
 
-impl<D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize>
-    Ssd1306<D, WIDTH, HEIGHT, BYTES>
+impl<D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize, const TX_BYTES: usize>
+    Ssd1306<D, WIDTH, HEIGHT, BYTES, TX_BYTES>
 where
     D: I2c,
 {
@@ -58,25 +67,41 @@ where
     }
 
     pub async fn flush(&mut self) -> Result<(), D::Error> {
+        let mut buffer = [0u8; 10];
+        let mut pos: usize = 0;
+        pos += Command::ControlByte(CommandMode::Control).encode(&mut buffer[pos..]);
+        pos += Command::SetColumnAddress([0x00, 0x7F]).encode(&mut buffer[pos..]);
+        pos += Command::SetPageAddress([0x00, 0x07]).encode(&mut buffer[pos..]);
+        self.device.write(self.address, &buffer[..pos]).await?;
+
+        let mut tx_buffer: [u8; TX_BYTES] = [0; TX_BYTES];
+        Command::ControlByte(CommandMode::Data).encode(&mut tx_buffer);
+        tx_buffer[1..].copy_from_slice(self.frame_buffer.frame_data());
+        self.device.write(self.address, &tx_buffer).await?;
+
+        Ok(())
+    }
+
+    pub async fn invert_display(&mut self) -> Result<(), D::Error> {
         todo!()
     }
 
-    pub async fn write_data(&mut self, data: &[u8]) -> Result<(), D::Error> {
+    pub async fn set_contrast(&mut self, contrast_value: u8) -> Result<(), D::Error> {
         todo!()
     }
 
     pub fn set_pixel(&mut self, x: usize, y: usize) {
-        todo!()
+        self.frame_buffer.set_pixel(x, y, BinaryColor::On);
     }
 
     pub fn clear_pixel(&mut self, x: usize, y: usize) {
-        todo!()
+        self.frame_buffer.set_pixel(x, y, BinaryColor::Off);
     }
 }
 
 #[cfg(test)]
-impl<D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize>
-    Ssd1306<D, WIDTH, HEIGHT, BYTES>
+impl<D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize, const TX_BYTES: usize>
+    Ssd1306<D, WIDTH, HEIGHT, BYTES, TX_BYTES>
 where
     D: I2c,
 {
@@ -110,9 +135,9 @@ mod tests {
         ssd1306_driver.free().0.done();
     }
 
-    fn get_ssd1306_device(expectations: &Vec<I2cTransaction>) -> Ssd1306<I2cMock, 128, 64, 1024> {
+    fn get_ssd1306_device(expectations: &Vec<I2cTransaction>) -> Ssd1306_128x64<I2cMock> {
         let i2c_device = I2cMock::new(expectations);
-        Ssd1306::<_, 128, 64, 1024>::new(i2c_device, DEVICE_ADDRESS)
+        Ssd1306_128x64::<_>::new(i2c_device, DEVICE_ADDRESS)
     }
 
     fn encode_command(command: Command) -> Vec<u8> {
