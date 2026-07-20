@@ -101,7 +101,12 @@ where
     }
 
     pub async fn set_contrast(&mut self, contrast_value: u8) -> Result<(), D::Error> {
-        todo!()
+        let mut buffer = [0u8; 10];
+        let mut pos: usize = 0;
+        pos += Command::ControlByte(CommandMode::Control).encode(&mut buffer[pos..]);
+        pos += Command::SetContrast(contrast_value).encode(&mut buffer[pos..]);
+        self.device.write(self.address, &buffer[..pos]).await?;
+        Ok(())
     }
 
     pub fn set_pixel(&mut self, x: usize, y: usize) {
@@ -128,12 +133,9 @@ where
 mod tests {
     use super::*;
     use crate::display_driver::{
-        ssd1306_driver::{
-            self,
-            command::{
-                AddressMode, Command, CommandMode, DisplayMode, DisplaySize::Display128x64,
-                PowerMode, ScanDirection, SegmentRemap,
-            },
+        ssd1306_driver::command::{
+            AddressMode, Command, CommandMode, DisplayMode, DisplaySize::Display128x64, PowerMode,
+            ScanDirection, SegmentRemap,
         },
         Encode,
     };
@@ -200,6 +202,23 @@ mod tests {
         let mut ssd1306_driver = get_ssd1306_device(&expectations);
         ssd1306_driver.invert_display().await.unwrap();
         ssd1306_driver.invert_display().await.unwrap();
+        ssd1306_driver.free().0.done();
+    }
+
+    #[tokio::test]
+    async fn should_set_contrast_with_proper_commands() {
+        let contrast_value: u8 = 0x08;
+        let mut set_contrast_command_bytes = Vec::new();
+        set_contrast_command_bytes
+            .extend(encode_command(Command::ControlByte(CommandMode::Control)));
+        set_contrast_command_bytes.extend(encode_command(Command::SetContrast(contrast_value)));
+        let expected_set_contrast_command =
+            I2cTransaction::write(DEVICE_ADDRESS, set_contrast_command_bytes);
+
+        let expectations = vec![expected_set_contrast_command];
+
+        let mut ssd1306_driver = get_ssd1306_device(&expectations);
+        ssd1306_driver.set_contrast(contrast_value).await.unwrap();
         ssd1306_driver.free().0.done();
     }
 

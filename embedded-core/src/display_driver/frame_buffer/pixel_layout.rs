@@ -13,6 +13,8 @@ impl PixelLayout for Ssd1306PixelLayout {
         let byte_num = page_num * width + x;
         let bit_num = y % page_size;
         let mut byte = framebuffer[byte_num];
+        let mask = 1 << bit_num;
+        byte &= !mask;
         byte = byte | (0x01 & (encoded as u8)) << bit_num;
         framebuffer[byte_num] = byte;
     }
@@ -43,6 +45,38 @@ mod ssd1306_tests {
         Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 63, 1);
         let byte = framebuffer[1023];
         assert_eq!(0xAA, byte);
+
+        assert_eq!(0x00, framebuffer[1]);
+        assert_eq!(0x00, framebuffer[1022]);
+        assert_eq!(0x00, framebuffer[100]);
+    }
+
+    #[test]
+    fn should_clear_pixel_data_to_right_memory_location() {
+        let mut framebuffer: [u8; 1024] = [0; 1024];
+        let width = 128;
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 0, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 2, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 4, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 6, 1);
+        // Clear pixels
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 0, 0);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 2, 0);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 4, 0);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 0, 6, 0);
+        let byte = framebuffer[0];
+        assert_eq!(0x00, byte);
+
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 57, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 59, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 61, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 63, 1);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 57, 0);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 59, 0);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 61, 0);
+        Ssd1306PixelLayout::write_pixel(&mut framebuffer, width, 127, 63, 0);
+        let byte = framebuffer[1023];
+        assert_eq!(0x00, byte);
 
         assert_eq!(0x00, framebuffer[1]);
         assert_eq!(0x00, framebuffer[1022]);
