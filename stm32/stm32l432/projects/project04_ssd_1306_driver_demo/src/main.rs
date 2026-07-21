@@ -14,28 +14,14 @@ use embassy_stm32::{
     peripherals,
     time::Hertz,
 };
-use embassy_sync::{
-    blocking_mutex::raw::ThreadModeRawMutex,
-    mutex::{Mutex, MutexGuard},
-};
+use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, mutex::Mutex};
 use embassy_time::{Delay, Timer};
-use embedded_core::{
-    button::DebouncedButton,
-    cursor::StepCursorCircular,
-    display_driver::Ht16K33,
-    frame::{Direction, FrameCursorCircular, decode_frames},
-};
+use embedded_core::{button::DebouncedButton, display_driver::Ssd1306_128x64};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
-const NUM_FRAMES: usize = 45;
-static HT16K33_DEVICE_ADDR: u8 = 0x70;
-
-const LED_MATRIX_ROWS: usize = 8;
-const LED_MATRIX_COLS: usize = 8;
-
-static DIRECTION: Mutex<ThreadModeRawMutex, Direction> = Mutex::new(Direction::Right);
-static STEP_CURSOR: StaticCell<Mutex<ThreadModeRawMutex, StepCursorCircular>> = StaticCell::new();
+// TODO Fix this address
+static DEVICE_ADDR: u8 = 0x3C;
 
 // i2c type
 type MyI2c = I2c<'static, Async, Master>;
@@ -43,11 +29,11 @@ type MyI2c = I2c<'static, Async, Master>;
 // I2C shared container
 static I2C_BUS: StaticCell<Mutex<ThreadModeRawMutex, MyI2c>> = StaticCell::new();
 
-// HT16K33 Type
-type Ht16K33Device = I2cDevice<'static, ThreadModeRawMutex, MyI2c>;
+// I2C Device Type
+type MyI2cDevice = I2cDevice<'static, ThreadModeRawMutex, MyI2c>;
 
 // Display Driver type
-type DisplayDriver = Ht16K33<Ht16K33Device, LED_MATRIX_ROWS, LED_MATRIX_COLS>;
+type DisplayDriver = Ssd1306_128x64<MyI2cDevice>;
 
 bind_interrupts!(struct I2cIrqs {
     // I2C Interrupts
@@ -75,10 +61,7 @@ async fn left_button_task(mut button: DebouncedButton<ExtiInput<'static, Async>,
     button
         .wait(|| async {
             {
-                let mut direction: MutexGuard<'_, ThreadModeRawMutex, Direction> =
-                    DIRECTION.lock().await;
-                info!("Left button pressed. Direction {}", *direction);
-                *direction = direction.toggle();
+                info!("Left Button pressed");
             }
         })
         .await;
@@ -88,17 +71,11 @@ async fn left_button_task(mut button: DebouncedButton<ExtiInput<'static, Async>,
 // Right Button Task
 //--------------------
 #[embassy_executor::task]
-async fn right_button_task(
-    mut button: DebouncedButton<ExtiInput<'static, Async>, Delay>,
-    cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
-) {
+async fn right_button_task(mut button: DebouncedButton<ExtiInput<'static, Async>, Delay>) {
     button
         .wait(|| async {
             {
                 info!("Right button pressed");
-                let mut step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
-                    cursor_mutex.lock().await;
-                step_cursor.move_step(Direction::Right);
             }
         })
         .await;
@@ -107,39 +84,39 @@ async fn right_button_task(
 //--------------------
 // Timer Task
 //--------------------
-#[embassy_executor::task]
-async fn timer_task(
-    mut display_driver: DisplayDriver,
-    mut frame_cursor: FrameCursorCircular<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>,
-    step_cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
-) {
-    loop {
-        // ---- 1. Read delay from step cursor ----
-        let delay_ms = {
-            let step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
-                step_cursor_mutex.lock().await;
-            step_cursor.current_value()
-        };
+// #[embassy_executor::task]
+// async fn timer_task(
+//     mut display_driver: DisplayDriver,
+//     mut frame_cursor: FrameCursorCircular<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>,
+//     step_cursor_mutex: &'static Mutex<ThreadModeRawMutex, StepCursorCircular>,
+// ) {
+//     loop {
+//         // ---- 1. Read delay from step cursor ----
+//         let delay_ms = {
+//             let step_cursor: MutexGuard<'_, ThreadModeRawMutex, StepCursorCircular> =
+//                 step_cursor_mutex.lock().await;
+//             step_cursor.current_value()
+//         };
 
-        // ---- 2. Sleep (NO LOCKS HELD) ----
-        Timer::after_millis(delay_ms as u64).await;
-        info!("Running timer task delay {}ms", &delay_ms);
+//         // ---- 2. Sleep (NO LOCKS HELD) ----
+//         Timer::after_millis(delay_ms as u64).await;
+//         info!("Running timer task delay {}ms", &delay_ms);
 
-        // ---- 3. Read direction from mutex ----
-        let direction = {
-            let direction_guard: MutexGuard<'static, ThreadModeRawMutex, Direction> =
-                DIRECTION.lock().await;
-            *direction_guard
-        };
+//         // ---- 3. Read direction from mutex ----
+//         let direction = {
+//             let direction_guard: MutexGuard<'static, ThreadModeRawMutex, Direction> =
+//                 DIRECTION.lock().await;
+//             *direction_guard
+//         };
 
-        // ---- 4. Move the frame cursor ----
-        frame_cursor.move_index(direction);
+//         // ---- 4. Move the frame cursor ----
+//         frame_cursor.move_index(direction);
 
-        // ---- 5. Render frame ----
-        let frame = frame_cursor.current_frame();
-        display_driver.write_bitmap(&frame).await.unwrap();
-    }
-}
+//         // ---- 5. Render frame ----
+//         let frame = frame_cursor.current_frame();
+//         display_driver.write_bitmap(&frame).await.unwrap();
+//     }
+// }
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -168,7 +145,7 @@ async fn main(spawner: Spawner) {
     let i2c_device = I2cDevice::new(i2c_bus);
 
     // Ht16K33 Device
-    let mut driver: DisplayDriver = Ht16K33::new(i2c_device, HT16K33_DEVICE_ADDR);
+    let mut driver: DisplayDriver = Ssd1306_128x64::new(i2c_device, DEVICE_ADDR);
 
     //-------------------------Left/Right Buttons --------------
 
@@ -179,30 +156,24 @@ async fn main(spawner: Spawner) {
     let debounced_btn_right = DebouncedButton::new(btn_right, Delay, 20);
 
     //-----------------------Frame Data--------------------------
-    let frames = decode_frames::<NUM_FRAMES, LED_MATRIX_ROWS, LED_MATRIX_COLS>(&[0x01]);
-    let frame_cursor: FrameCursorCircular<NUM_FRAMES, _, _> = FrameCursorCircular::new(&frames);
 
     driver.initialize().await.unwrap();
     info!("Initialization commands written");
     Timer::after_millis(100).await;
 
-    let step_cursor = StepCursorCircular::new(2000, 500, 250, 7);
-    let step_cursor_mutex = STEP_CURSOR.init(Mutex::new(step_cursor));
-
-    driver
-        .write_bitmap(frame_cursor.current_frame())
-        .await
-        .unwrap();
+    driver.set_pixel(10, 10);
+    driver.set_pixel(70, 50);
+    driver.flush().await.unwrap();
 
     spawner
         .spawn(left_button_task(debounced_btn_left))
         .expect("Failed to spawn left button task");
 
     spawner
-        .spawn(right_button_task(debounced_btn_right, step_cursor_mutex))
+        .spawn(right_button_task(debounced_btn_right))
         .expect("Failed to spawn right button task");
 
-    spawner
-        .spawn(timer_task(driver, frame_cursor, step_cursor_mutex))
-        .expect("Failed to spawn receiver task");
+    // spawner
+    //     .spawn(timer_task(driver, frame_cursor, step_cursor_mutex))
+    //     .expect("Failed to spawn receiver task");
 }
