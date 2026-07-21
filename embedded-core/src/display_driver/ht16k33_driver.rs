@@ -160,7 +160,6 @@ mod tests {
                 })
                 .flat_map(|f| f)
                 .collect()
-            //vec![I2cTransaction::write(DEVICE_ADDRESS, vec![]).with_error(ErrorKind::Other)]
         } else {
             transaction_data
                 .iter()
