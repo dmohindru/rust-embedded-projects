@@ -14,18 +14,13 @@ pub enum AddressMode {
 }
 
 pub enum ScanDirection {
-    TopToBottom,
-    BottomToTop,
+    TopToBottom, // C0
+    BottomToTop, // C8
 }
 
 pub enum SegmentRemap {
     Normal,   // A0
     Remapped, // A1
-}
-
-pub enum ComScanDirection {
-    Normal,   // C0
-    Remapped, // C8
 }
 
 // See section 2.1 Command Table for Charge Bump Setting
