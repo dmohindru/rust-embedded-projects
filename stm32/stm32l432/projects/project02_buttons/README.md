@@ -1,3 +1,3 @@
 # Introduction
 
-This demo example for buttons
+This simple example demonstrating buttons usage
