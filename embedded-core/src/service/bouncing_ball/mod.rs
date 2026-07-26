@@ -43,3 +43,58 @@ where
         todo!()
     }
 }
+
+#[cfg(test)]
+impl<D, const WIDTH: usize, const HEIGHT: usize> BouncingBall<D, WIDTH, HEIGHT>
+where
+    D: DrawTarget + Present,
+{
+    pub fn set_circle_points(&mut self, circle_one_center: Point, circle_two_center: Point) {
+        self.circle_one_center = circle_one_center;
+        self.circle_two_center = circle_two_center;
+    }
+
+    pub fn get_circle_points(&self) -> (Point, Point) {
+        (self.circle_one_center, self.circle_two_center)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_move_balls_in_right_direction() {
+        todo!()
+    }
+
+    #[test]
+    fn should_bounce_ball_off_top_and_bottom_edge() {
+        todo!()
+    }
+
+    #[test]
+    fn should_bounce_ball_off_left_and_right_edge() {
+        todo!()
+    }
+
+    #[test]
+    fn should_bounce_ball_off_top_left_and_bottom_right_corner() {
+        todo!()
+    }
+
+    #[test]
+    fn should_bounce_ball_off_top_right_and_bottom_left_corner() {
+        todo!()
+    }
+
+    #[test]
+    fn should_bounce_off_each_other_on_collision() {
+        todo!()
+    }
+
+    #[test]
+    fn should_display_animation() {
+        todo!()
+    }
+}
