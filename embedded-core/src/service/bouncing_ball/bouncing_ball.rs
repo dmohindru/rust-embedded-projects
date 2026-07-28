@@ -26,7 +26,7 @@ where
     pub fn draw(&mut self) {
         self.renderer
             .draw(self.bouncing_ball_core.snapshot(), &mut self.display);
-        //self.display.present().unwrap();
+        // self.display.present().unwrap();
         todo!()
     }
 }

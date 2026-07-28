@@ -23,7 +23,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
         }
     }
 
-    pub fn tick(&mut self) {}
+    pub fn tick(&mut self) {
+        todo!()
+    }
 
     pub fn snapshot(&self) -> BouncingBallSnapshot {
         BouncingBallSnapshot {
@@ -44,9 +46,30 @@ impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
 mod tests {
     use super::*;
 
+    const BALL_RADIUS: usize = 5;
+
+    #[test]
+    fn should_have_balls_center_at_right_location_for_new_board() {
+        let board = get_new_board();
+        let board_snapshot = board.snapshot();
+        let coordinates = get_start_coordinates();
+        let expected_first_point_center = Point::new(coordinates.0, coordinates.1);
+        let expected_second_point_center = Point::new(coordinates.0 * 3, coordinates.1);
+        assert_eq!(&expected_first_point_center, board_snapshot.snapshot.0);
+        assert_eq!(&expected_second_point_center, board_snapshot.snapshot.1);
+    }
+
     #[test]
     fn should_move_balls_in_right_direction() {
-        todo!()
+        let mut board = get_new_board();
+        for _ in 0..5 {
+            board.tick();
+        }
+        let board_snapshot = board.snapshot();
+        let expected_first_point_center = Point::new(57, 7);
+        let expected_second_point_center = Point::new(71, 57);
+        assert_eq!(&expected_first_point_center, board_snapshot.snapshot.0);
+        assert_eq!(&expected_second_point_center, board_snapshot.snapshot.1);
     }
 
     #[test]
@@ -74,8 +97,13 @@ mod tests {
         todo!()
     }
 
-    #[test]
-    fn should_display_animation() {
-        todo!()
+    fn get_new_board() -> BouncingBallCore<128, 64> {
+        BouncingBallCore::<128, 64>::new(BALL_RADIUS)
+    }
+
+    fn get_start_coordinates() -> (i32, i32) {
+        let x = 128 / 4;
+        let y = 64 / 2;
+        (x, y)
     }
 }
