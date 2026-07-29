@@ -221,18 +221,87 @@ mod tests {
     }
 
     #[test]
-    fn should_move_to_edge_if_step_size_crosses_boundary() {
+    fn should_move_to_top_bottom_edge_if_step_size_crosses_boundary() {
+        todo!()
+    }
+
+    #[test]
+    fn should_move_to_left_right_edge_if_step_size_crosses_boundary() {
         todo!()
     }
 
     #[test]
     fn should_bounce_ball_off_top_left_and_bottom_right_corner() {
-        todo!()
+        let mut board = get_new_board();
+
+        let ball_one_start = Ball {
+            x: 10,
+            y: 10,
+            x_dir: -1,
+            y_dir: -1,
+        };
+
+        let ball_two_start = Ball {
+            x: 117,
+            y: 53,
+            x_dir: 1,
+            y_dir: 1,
+        };
+        board.set_ball_coordinates(ball_one_start, ball_two_start);
+        for _ in 0..3 {
+            board.tick();
+        }
+
+        let expected_ball_one_x = 15;
+        let expected_ball_one_y = 15;
+
+        let expected_ball_two_x = 112;
+        let expected_ball_two_y = 48;
+
+        assert_ball_coordinates(
+            board,
+            expected_ball_one_x,
+            expected_ball_one_y,
+            expected_ball_two_x,
+            expected_ball_two_y,
+        );
     }
 
     #[test]
     fn should_bounce_ball_off_top_right_and_bottom_left_corner() {
-        todo!()
+        let mut board = get_new_board();
+
+        let ball_one_start = Ball {
+            x: 117,
+            y: 10,
+            x_dir: 1,
+            y_dir: -1,
+        };
+
+        let ball_two_start = Ball {
+            x: 10,
+            y: 53,
+            x_dir: -1,
+            y_dir: 1,
+        };
+        board.set_ball_coordinates(ball_one_start, ball_two_start);
+        for _ in 0..3 {
+            board.tick();
+        }
+
+        let expected_ball_one_x = 112;
+        let expected_ball_one_y = 15;
+
+        let expected_ball_two_x = 15;
+        let expected_ball_two_y = 48;
+
+        assert_ball_coordinates(
+            board,
+            expected_ball_one_x,
+            expected_ball_one_y,
+            expected_ball_two_x,
+            expected_ball_two_y,
+        );
     }
 
     #[test]
