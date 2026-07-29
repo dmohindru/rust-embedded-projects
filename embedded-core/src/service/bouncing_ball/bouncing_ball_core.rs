@@ -1,44 +1,98 @@
-use embedded_graphics::geometry::Point;
-
 pub struct BouncingBallSnapshot<'a> {
-    snapshot: (&'a Point, &'a Point),
+    ball_coordinates: (&'a Ball, &'a Ball),
+    radius: usize,
+}
+
+pub struct Ball {
+    x: i32,
+    y: i32,
+    x_dir: i32,
+    y_dir: i32,
 }
 pub struct BouncingBallCore<const WIDTH: usize, const HEIGHT: usize> {
     radius: usize,
-    circle_one_center: Point,
-    circle_two_center: Point,
+    first_ball: Ball,
+    second_ball: Ball,
+    step_size: usize,
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
-    pub fn new(radius: usize) -> Self {
+    pub fn new(radius: usize, step_size: usize) -> Self {
         let center_y: i32 = HEIGHT as i32 / 2;
         let center_one_x = WIDTH as i32 / 4;
         let center_two_x = center_one_x * 3;
-        let circle_one_center = Point::new(center_one_x, center_y);
-        let circle_two_center = Point::new(center_two_x, center_y);
+        let ball_one = Ball {
+            x: center_one_x,
+            y: center_y,
+            x_dir: 1,
+            y_dir: -1,
+        };
+
+        let ball_two = Ball {
+            x: center_two_x,
+            y: center_y,
+            x_dir: -1,
+            y_dir: 1,
+        };
+
         Self {
             radius,
-            circle_one_center,
-            circle_two_center,
+            first_ball: ball_one,
+            second_ball: ball_two,
+            step_size,
         }
     }
 
     pub fn tick(&mut self) {
-        todo!()
+        let ball_one_y_edge = Self::get_ball_y_edge(&self.first_ball, self.radius);
+        let ball_two_y_edge = Self::get_ball_y_edge(&self.second_ball, self.radius);
+        let ball_one_x_edge = Self::get_ball_x_edge(&self.first_ball, self.radius);
+        let ball_two_x_edge = Self::get_ball_x_edge(&self.second_ball, self.radius);
+
+        if ball_one_y_edge <= 0 || ball_one_y_edge >= HEIGHT - 1 {
+            self.first_ball.y_dir *= -1;
+        }
+
+        if ball_two_y_edge <= 0 || ball_two_y_edge >= HEIGHT - 1 {
+            self.second_ball.y_dir *= -1;
+        }
+
+        if ball_one_x_edge <= 0 || ball_one_x_edge >= WIDTH - 1 {
+            self.first_ball.x_dir *= -1;
+        }
+
+        if ball_two_x_edge <= 0 || ball_two_x_edge >= WIDTH - 1 {
+            self.second_ball.x_dir *= -1;
+        }
+
+        self.first_ball.x += self.first_ball.x_dir * self.step_size as i32;
+        self.first_ball.y += self.first_ball.y_dir * self.step_size as i32;
+
+        self.second_ball.x += self.second_ball.x_dir * self.step_size as i32;
+        self.second_ball.y += self.second_ball.y_dir * self.step_size as i32;
     }
 
-    pub fn snapshot(&self) -> BouncingBallSnapshot {
+    fn get_ball_y_edge(ball: &Ball, radius: usize) -> usize {
+        (ball.y + ball.y_dir * radius as i32) as usize
+    }
+
+    fn get_ball_x_edge(ball: &Ball, radius: usize) -> usize {
+        (ball.x + ball.x_dir * radius as i32) as usize
+    }
+
+    pub fn snapshot(&self) -> BouncingBallSnapshot<'_> {
         BouncingBallSnapshot {
-            snapshot: (&self.circle_one_center, &self.circle_two_center),
+            ball_coordinates: (&self.first_ball, &self.second_ball),
+            radius: self.radius,
         }
     }
 }
 
 #[cfg(test)]
 impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
-    pub fn set_circle_points(&mut self, circle_one_center: Point, circle_two_center: Point) {
-        self.circle_one_center = circle_one_center;
-        self.circle_two_center = circle_two_center;
+    pub fn set_ball_coordinates(&mut self, ball_one: Ball, ball_two: Ball) {
+        self.first_ball = ball_one;
+        self.second_ball = ball_two;
     }
 }
 
@@ -47,38 +101,127 @@ mod tests {
     use super::*;
 
     const BALL_RADIUS: usize = 5;
+    const STEP_SIZE: usize = 5;
 
     #[test]
     fn should_have_balls_center_at_right_location_for_new_board() {
         let board = get_new_board();
         let board_snapshot = board.snapshot();
         let coordinates = get_start_coordinates();
-        let expected_first_point_center = Point::new(coordinates.0, coordinates.1);
-        let expected_second_point_center = Point::new(coordinates.0 * 3, coordinates.1);
-        assert_eq!(&expected_first_point_center, board_snapshot.snapshot.0);
-        assert_eq!(&expected_second_point_center, board_snapshot.snapshot.1);
+
+        // First ball
+        assert_eq!(&coordinates.0, &board_snapshot.ball_coordinates.0.x);
+        assert_eq!(&coordinates.1, &board_snapshot.ball_coordinates.0.y);
+
+        // Second ball
+        assert_eq!(&(coordinates.0 * 3), &board_snapshot.ball_coordinates.1.x);
+        assert_eq!(&coordinates.1, &board_snapshot.ball_coordinates.1.y);
     }
 
     #[test]
-    fn should_move_balls_in_right_direction() {
+    fn should_move_balls_in_required_direction() {
         let mut board = get_new_board();
         for _ in 0..5 {
             board.tick();
         }
-        let board_snapshot = board.snapshot();
-        let expected_first_point_center = Point::new(57, 7);
-        let expected_second_point_center = Point::new(71, 57);
-        assert_eq!(&expected_first_point_center, board_snapshot.snapshot.0);
-        assert_eq!(&expected_second_point_center, board_snapshot.snapshot.1);
+        /*
+        Starting point for single ball
+        x: 32, y: 32
+        Next point calculation
+        x1 = x + (x_dir * step_size)
+        y1 = y + (y_dir * step_size)
+        */
+        let expected_ball_one_x = 57;
+        let expected_ball_one_y = 7;
+
+        let expected_ball_two_x = 71;
+        let expected_ball_two_y = 57;
+
+        assert_ball_coordinates(
+            board,
+            expected_ball_one_x,
+            expected_ball_one_y,
+            expected_ball_two_x,
+            expected_ball_two_y,
+        );
     }
 
     #[test]
     fn should_bounce_ball_off_top_and_bottom_edge() {
-        todo!()
+        let mut board = get_new_board();
+
+        let ball_one_start = Ball {
+            x: 30,
+            y: 10,
+            x_dir: 1,
+            y_dir: -1,
+        };
+
+        let ball_two_start = Ball {
+            x: 50,
+            y: 53,
+            x_dir: -1,
+            y_dir: 1,
+        };
+        board.set_ball_coordinates(ball_one_start, ball_two_start);
+        for _ in 0..3 {
+            board.tick();
+        }
+
+        let expected_ball_one_x = 45;
+        let expected_ball_one_y = 15;
+
+        let expected_ball_two_x = 35;
+        let expected_ball_two_y = 48;
+
+        assert_ball_coordinates(
+            board,
+            expected_ball_one_x,
+            expected_ball_one_y,
+            expected_ball_two_x,
+            expected_ball_two_y,
+        );
     }
 
     #[test]
     fn should_bounce_ball_off_left_and_right_edge() {
+        let mut board = get_new_board();
+
+        let ball_one_start = Ball {
+            x: 10,
+            y: 30,
+            x_dir: -1,
+            y_dir: 1,
+        };
+
+        let ball_two_start = Ball {
+            x: 117,
+            y: 30,
+            x_dir: 1,
+            y_dir: 1,
+        };
+        board.set_ball_coordinates(ball_one_start, ball_two_start);
+        for _ in 0..3 {
+            board.tick();
+        }
+
+        let expected_ball_one_x = 15;
+        let expected_ball_one_y = 45;
+
+        let expected_ball_two_x = 112;
+        let expected_ball_two_y = 45;
+
+        assert_ball_coordinates(
+            board,
+            expected_ball_one_x,
+            expected_ball_one_y,
+            expected_ball_two_x,
+            expected_ball_two_y,
+        );
+    }
+
+    #[test]
+    fn should_move_to_edge_if_step_size_crosses_boundary() {
         todo!()
     }
 
@@ -98,12 +241,35 @@ mod tests {
     }
 
     fn get_new_board() -> BouncingBallCore<128, 64> {
-        BouncingBallCore::<128, 64>::new(BALL_RADIUS)
+        BouncingBallCore::<128, 64>::new(BALL_RADIUS, STEP_SIZE)
     }
 
     fn get_start_coordinates() -> (i32, i32) {
         let x = 128 / 4;
         let y = 64 / 2;
         (x, y)
+    }
+
+    fn assert_ball_coordinates(
+        board: BouncingBallCore<128, 64>,
+        expected_ball_one_x: i32,
+        expected_ball_one_y: i32,
+        expected_ball_two_x: i32,
+        expected_ball_two_y: i32,
+    ) {
+        let board_snapshot = board.snapshot();
+        // let expected_ball_one_x = 50;
+        // let expected_ball_one_y = 15;
+
+        // let expected_ball_two_x = 30;
+        // let expected_ball_two_y = 48;
+
+        // First ball
+        assert_eq!(expected_ball_one_x, board_snapshot.ball_coordinates.0.x);
+        assert_eq!(expected_ball_one_y, board_snapshot.ball_coordinates.0.y);
+
+        // Second ball
+        assert_eq!(expected_ball_two_x, board_snapshot.ball_coordinates.1.x);
+        assert_eq!(expected_ball_two_y, board_snapshot.ball_coordinates.1.y);
     }
 }
