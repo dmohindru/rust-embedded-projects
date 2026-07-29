@@ -222,7 +222,39 @@ mod tests {
 
     #[test]
     fn should_move_to_top_bottom_edge_if_step_size_crosses_boundary() {
-        todo!()
+        let mut board = get_new_board();
+
+        let ball_one_start = Ball {
+            x: 30,
+            y: 8,
+            x_dir: 1,
+            y_dir: -1,
+        };
+
+        let ball_two_start = Ball {
+            x: 30,
+            y: 55,
+            x_dir: -1,
+            y_dir: 1,
+        };
+        board.set_ball_coordinates(ball_one_start, ball_two_start);
+        for _ in 0..2 {
+            board.tick();
+        }
+
+        let expected_ball_one_x = 40;
+        let expected_ball_one_y = 10;
+
+        let expected_ball_two_x = 20;
+        let expected_ball_two_y = 53;
+
+        assert_ball_coordinates(
+            board,
+            expected_ball_one_x,
+            expected_ball_one_y,
+            expected_ball_two_x,
+            expected_ball_two_y,
+        );
     }
 
     #[test]
@@ -327,11 +359,6 @@ mod tests {
         expected_ball_two_y: i32,
     ) {
         let board_snapshot = board.snapshot();
-        // let expected_ball_one_x = 50;
-        // let expected_ball_one_y = 15;
-
-        // let expected_ball_two_x = 30;
-        // let expected_ball_two_y = 48;
 
         // First ball
         assert_eq!(expected_ball_one_x, board_snapshot.ball_coordinates.0.x);
