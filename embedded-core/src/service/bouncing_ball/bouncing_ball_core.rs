@@ -44,6 +44,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
     }
 
     pub fn tick(&mut self) {
+        self.handle_collision();
         let ball_one_y_edge = Self::get_ball_y_edge(&self.first_ball, self.radius);
         let ball_two_y_edge = Self::get_ball_y_edge(&self.second_ball, self.radius);
         let ball_one_x_edge = Self::get_ball_x_edge(&self.first_ball, self.radius);
@@ -54,38 +55,19 @@ impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
 
         Self::handle_edge_over_flow(&mut self.first_ball, self.radius, self.step_size);
         Self::handle_edge_over_flow(&mut self.second_ball, self.radius, self.step_size);
+    }
 
-        // if ball_one_y_edge < 0 {
-        //     self.first_ball.y = self.radius as i32;
-        // } else if ball_one_y_edge > (HEIGHT - 1) as i32 {
-        //     self.first_ball.y = (HEIGHT - 1 - self.radius) as i32;
-        // } else {
-        //     self.first_ball.y += self.first_ball.y_dir * self.step_size as i32;
-        // }
-
-        // if ball_one_x_edge < 0 {
-        //     self.first_ball.x = self.radius as i32;
-        // } else if ball_one_x_edge > (WIDTH - 1) as i32 {
-        //     self.first_ball.x = (WIDTH - 1 - self.radius) as i32;
-        // } else {
-        //     self.first_ball.x += self.first_ball.x_dir * self.step_size as i32;
-        // }
-
-        // if ball_two_y_edge < 0 {
-        //     self.second_ball.y = self.radius as i32;
-        // } else if ball_two_y_edge > (HEIGHT - 1) as i32 {
-        //     self.second_ball.y = (HEIGHT - 1 - self.radius) as i32;
-        // } else {
-        //     self.second_ball.y += self.second_ball.y_dir * self.step_size as i32;
-        // }
-
-        // if ball_two_x_edge < 0 {
-        //     self.second_ball.x = self.radius as i32;
-        // } else if ball_two_x_edge > (WIDTH - 1) as i32 {
-        //     self.second_ball.x = (WIDTH - 1 - self.radius) as i32;
-        // } else {
-        //     self.second_ball.x += self.second_ball.x_dir * self.step_size as i32;
-        // }
+    fn handle_collision(&mut self) {
+        let dx = self.first_ball.x - self.second_ball.x;
+        let dy = self.first_ball.y - self.second_ball.y;
+        let distance_sq = dx * dx + dy * dy;
+        let radius_sum_sq = (2 * self.radius * self.radius) as i32;
+        if distance_sq <= radius_sum_sq {
+            self.first_ball.x_dir *= -1;
+            self.first_ball.y_dir *= -1;
+            self.second_ball.x_dir *= -1;
+            self.second_ball.y_dir *= -1;
+        }
     }
 
     fn get_ball_y_edge(ball: &Ball, radius: usize) -> i32 {
@@ -416,7 +398,39 @@ mod tests {
 
     #[test]
     fn should_bounce_off_each_other_on_collision() {
-        todo!()
+        let mut board = get_new_board();
+
+        let ball_one_start = Ball {
+            x: 10,
+            y: 10,
+            x_dir: 1,
+            y_dir: 1,
+        };
+
+        let ball_two_start = Ball {
+            x: 25,
+            y: 25,
+            x_dir: -1,
+            y_dir: -1,
+        };
+        board.set_ball_coordinates(ball_one_start, ball_two_start);
+        for _ in 0..2 {
+            board.tick();
+        }
+
+        let expected_ball_one_x = 10;
+        let expected_ball_one_y = 10;
+
+        let expected_ball_two_x = 25;
+        let expected_ball_two_y = 25;
+
+        assert_ball_coordinates(
+            board,
+            expected_ball_one_x,
+            expected_ball_one_y,
+            expected_ball_two_x,
+            expected_ball_two_y,
+        );
     }
 
     fn get_new_board() -> BouncingBallCore<128, 64> {
