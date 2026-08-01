@@ -1,13 +1,13 @@
 pub struct BouncingBallSnapshot<'a> {
-    ball_coordinates: (&'a Ball, &'a Ball),
-    radius: usize,
+    pub ball_coordinates: (&'a Ball, &'a Ball),
+    pub radius: usize,
 }
 
 pub struct Ball {
-    x: i32,
-    y: i32,
-    x_dir: i32,
-    y_dir: i32,
+    pub x: i32,
+    pub y: i32,
+    pub x_dir: i32,
+    pub y_dir: i32,
 }
 pub struct BouncingBallCore<const WIDTH: usize, const HEIGHT: usize> {
     radius: usize,
