@@ -52,37 +52,40 @@ impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
         Self::handle_edge_bounce(&mut self.first_ball, ball_one_x_edge, ball_one_y_edge);
         Self::handle_edge_bounce(&mut self.second_ball, ball_two_x_edge, ball_two_y_edge);
 
-        if ball_one_y_edge < 0 {
-            self.first_ball.y = self.radius as i32;
-        } else if ball_one_y_edge > (HEIGHT - 1) as i32 {
-            self.first_ball.y = (HEIGHT - 1 - self.radius) as i32;
-        } else {
-            self.first_ball.y += self.first_ball.y_dir * self.step_size as i32;
-        }
+        Self::handle_edge_over_flow(&mut self.first_ball, self.radius, self.step_size);
+        Self::handle_edge_over_flow(&mut self.second_ball, self.radius, self.step_size);
 
-        if ball_one_x_edge < 0 {
-            self.first_ball.x = self.radius as i32;
-        } else if ball_one_x_edge > (WIDTH - 1) as i32 {
-            self.first_ball.x = (WIDTH - 1 - self.radius) as i32;
-        } else {
-            self.first_ball.x += self.first_ball.x_dir * self.step_size as i32;
-        }
+        // if ball_one_y_edge < 0 {
+        //     self.first_ball.y = self.radius as i32;
+        // } else if ball_one_y_edge > (HEIGHT - 1) as i32 {
+        //     self.first_ball.y = (HEIGHT - 1 - self.radius) as i32;
+        // } else {
+        //     self.first_ball.y += self.first_ball.y_dir * self.step_size as i32;
+        // }
 
-        if ball_two_y_edge < 0 {
-            self.second_ball.y = self.radius as i32;
-        } else if ball_two_y_edge > (HEIGHT - 1) as i32 {
-            self.second_ball.y = (HEIGHT - 1 - self.radius) as i32;
-        } else {
-            self.second_ball.y += self.second_ball.y_dir * self.step_size as i32;
-        }
+        // if ball_one_x_edge < 0 {
+        //     self.first_ball.x = self.radius as i32;
+        // } else if ball_one_x_edge > (WIDTH - 1) as i32 {
+        //     self.first_ball.x = (WIDTH - 1 - self.radius) as i32;
+        // } else {
+        //     self.first_ball.x += self.first_ball.x_dir * self.step_size as i32;
+        // }
 
-        if ball_two_x_edge < 0 {
-            self.second_ball.x = self.radius as i32;
-        } else if ball_two_x_edge > (WIDTH - 1) as i32 {
-            self.second_ball.x = (WIDTH - 1 - self.radius) as i32;
-        } else {
-            self.second_ball.x += self.second_ball.x_dir * self.step_size as i32;
-        }
+        // if ball_two_y_edge < 0 {
+        //     self.second_ball.y = self.radius as i32;
+        // } else if ball_two_y_edge > (HEIGHT - 1) as i32 {
+        //     self.second_ball.y = (HEIGHT - 1 - self.radius) as i32;
+        // } else {
+        //     self.second_ball.y += self.second_ball.y_dir * self.step_size as i32;
+        // }
+
+        // if ball_two_x_edge < 0 {
+        //     self.second_ball.x = self.radius as i32;
+        // } else if ball_two_x_edge > (WIDTH - 1) as i32 {
+        //     self.second_ball.x = (WIDTH - 1 - self.radius) as i32;
+        // } else {
+        //     self.second_ball.x += self.second_ball.x_dir * self.step_size as i32;
+        // }
     }
 
     fn get_ball_y_edge(ball: &Ball, radius: usize) -> i32 {
@@ -100,6 +103,26 @@ impl<const WIDTH: usize, const HEIGHT: usize> BouncingBallCore<WIDTH, HEIGHT> {
 
         if ball_x_edge <= 0 || ball_x_edge >= (WIDTH - 1) as i32 {
             ball.x_dir *= -1;
+        }
+    }
+
+    fn handle_edge_over_flow(ball: &mut Ball, radius: usize, step_size: usize) {
+        let ball_y_edge = ball.y + 2 * ball.y_dir * radius as i32;
+        let ball_x_edge = ball.x + 2 * ball.x_dir * radius as i32;
+        if ball_y_edge < 0 {
+            ball.y = radius as i32;
+        } else if ball_y_edge > (HEIGHT - 1) as i32 {
+            ball.y = (HEIGHT - 1 - radius) as i32;
+        } else {
+            ball.y += ball.y_dir * step_size as i32;
+        }
+
+        if ball_x_edge < 0 {
+            ball.x = radius as i32;
+        } else if ball_x_edge > (WIDTH - 1) as i32 {
+            ball.x = (WIDTH - 1 - radius) as i32;
+        } else {
+            ball.x += ball.x_dir * step_size as i32;
         }
     }
 
@@ -292,7 +315,7 @@ mod tests {
         };
 
         let ball_two_start = Ball {
-            x: 120,
+            x: 119,
             y: 30,
             x_dir: 1,
             y_dir: 1,
@@ -305,7 +328,7 @@ mod tests {
         let expected_ball_one_x = 10;
         let expected_ball_one_y = 40;
 
-        let expected_ball_two_x = 118;
+        let expected_ball_two_x = 117;
         let expected_ball_two_y = 40;
 
         assert_ball_coordinates(
