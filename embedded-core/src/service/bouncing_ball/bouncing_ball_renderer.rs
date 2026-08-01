@@ -58,7 +58,7 @@ mod tests {
 
     #[test]
     #[ignore = "visual test only"]
-    fn draw_test() {
+    fn visual_display_test() {
         let mut display: SimulatorDisplay<BinaryColor> = SimulatorDisplay::new(Size::new(128, 64));
         let renderer = BouncingBallRenderer::<BinaryColor>::new(BinaryColor::On);
         let ball_one = Ball {
@@ -85,5 +85,10 @@ mod tests {
             .theme(BinaryColorTheme::OledWhite)
             .build();
         Window::new("Renderer Test", &output_setting).show_static(&display);
+    }
+
+    #[test]
+    fn mock_display_test() {
+        todo!()
     }
 }
