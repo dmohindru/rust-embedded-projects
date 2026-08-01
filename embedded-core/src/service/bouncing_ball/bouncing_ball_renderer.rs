@@ -51,7 +51,7 @@ mod tests {
     use crate::service::bouncing_ball::bouncing_ball_core::Ball;
 
     use super::*;
-    use embedded_graphics::{geometry::Size, pixelcolor::BinaryColor};
+    use embedded_graphics::{geometry::Size, mock_display::MockDisplay, pixelcolor::BinaryColor};
     use embedded_graphics_simulator::{
         BinaryColorTheme, OutputSettingsBuilder, SimulatorDisplay, Window,
     };
@@ -77,7 +77,7 @@ mod tests {
 
         let snapshot = BouncingBallSnapshot {
             ball_coordinates: (&ball_one, &ball_two),
-            radius: 10,
+            radius: 3,
         };
 
         renderer.draw(snapshot, &mut display).unwrap();
@@ -89,6 +89,29 @@ mod tests {
 
     #[test]
     fn mock_display_test() {
-        todo!()
+        let mut display = MockDisplay::<BinaryColor>::new();
+
+        let renderer = BouncingBallRenderer::<BinaryColor>::new(BinaryColor::On);
+        let ball_one = Ball {
+            x: 0,
+            y: 0,
+            x_dir: 1,
+            y_dir: 1,
+        };
+
+        let ball_two = Ball {
+            x: 4,
+            y: 0,
+            x_dir: 1,
+            y_dir: 1,
+        };
+
+        let snapshot = BouncingBallSnapshot {
+            ball_coordinates: (&ball_one, &ball_two),
+            radius: 3,
+        };
+
+        renderer.draw(snapshot, &mut display).unwrap();
+        display.assert_pattern(&[" #   # ", "### ###", " #   # "]);
     }
 }
