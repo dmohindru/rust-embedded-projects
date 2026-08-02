@@ -28,16 +28,21 @@ where
         D: DrawTarget<Color = C>,
     {
         let fill_style = PrimitiveStyle::with_fill(self.ball_color);
+        let transformed_x_one = snapshot.ball_coordinates.0.x - snapshot.radius as i32;
+        let transformed_y_one = snapshot.ball_coordinates.0.y - snapshot.radius as i32;
         Circle::new(
-            Point::new(snapshot.ball_coordinates.0.x, snapshot.ball_coordinates.0.y),
-            snapshot.radius as u32,
+            Point::new(transformed_x_one, transformed_y_one),
+            (snapshot.radius * 2) as u32,
         )
         .into_styled(fill_style)
         .draw(display)?;
 
+        let transformed_x_two = snapshot.ball_coordinates.1.x - snapshot.radius as i32;
+        let transformed_y_two = snapshot.ball_coordinates.1.y - snapshot.radius as i32;
+
         Circle::new(
-            Point::new(snapshot.ball_coordinates.1.x, snapshot.ball_coordinates.1.y),
-            snapshot.radius as u32,
+            Point::new(transformed_x_two, transformed_y_two),
+            (snapshot.radius * 2) as u32,
         )
         .into_styled(fill_style)
         .draw(display)?;
@@ -93,25 +98,25 @@ mod tests {
 
         let renderer = BouncingBallRenderer::<BinaryColor>::new(BinaryColor::On);
         let ball_one = Ball {
-            x: 0,
-            y: 0,
+            x: 2,
+            y: 2,
             x_dir: 1,
             y_dir: 1,
         };
 
         let ball_two = Ball {
-            x: 4,
-            y: 0,
+            x: 7,
+            y: 2,
             x_dir: 1,
             y_dir: 1,
         };
 
         let snapshot = BouncingBallSnapshot {
             ball_coordinates: (&ball_one, &ball_two),
-            radius: 3,
+            radius: 2,
         };
 
         renderer.draw(snapshot, &mut display).unwrap();
-        display.assert_pattern(&[" #   # ", "### ###", " #   # "]);
+        display.assert_pattern(&[" ##   ## ", "#### ####", "#### ####", " ##   ## "]);
     }
 }
