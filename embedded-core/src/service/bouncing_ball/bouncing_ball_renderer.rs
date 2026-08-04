@@ -82,7 +82,7 @@ mod tests {
 
         let snapshot = BouncingBallSnapshot {
             ball_coordinates: (&ball_one, &ball_two),
-            radius: 3,
+            radius: 1,
         };
 
         renderer.draw(snapshot, &mut display).unwrap();
