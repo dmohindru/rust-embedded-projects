@@ -116,6 +116,11 @@ where
     pub fn clear_pixel(&mut self, x: usize, y: usize) {
         self.frame_buffer.set_pixel(x, y, BinaryColor::Off);
     }
+
+    //TODO Write test for it
+    pub fn clear_frame_data(&mut self) {
+        self.frame_buffer.clear_frame_data();
+    }
 }
 
 #[cfg(test)]

@@ -36,4 +36,8 @@ where
     pub fn frame_data(&self) -> &[u8] {
         &self.pixels
     }
+
+    pub fn clear_frame_data(&mut self) {
+        self.pixels.fill(0);
+    }
 }
