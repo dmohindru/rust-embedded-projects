@@ -6,9 +6,9 @@ impl<D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize, const TX_BY
 where
     D: I2c,
 {
-    type Error = D::Error;
+    type PresentError = D::Error;
 
-    async fn present(&mut self) -> Result<(), Self::Error> {
+    async fn present(&mut self) -> Result<(), Self::PresentError> {
         self.flush().await
     }
 }

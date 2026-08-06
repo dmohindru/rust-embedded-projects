@@ -5,7 +5,7 @@
 /// executors are typically single-threaded.
 #[allow(async_fn_in_trait)]
 pub trait Present {
-    type Error;
+    type PresentError;
 
-    async fn present(&mut self) -> Result<(), Self::Error>;
+    async fn present(&mut self) -> Result<(), Self::PresentError>;
 }

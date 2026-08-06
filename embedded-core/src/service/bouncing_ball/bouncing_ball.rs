@@ -20,7 +20,7 @@ impl<D, const WIDTH: usize, const HEIGHT: usize, C: PixelColor> BouncingBall<D, 
 where
     D: DrawTarget<Color = C, Error = Infallible> + Present,
 {
-    pub async fn update(&mut self) -> Result<(), <D as Present>::Error> {
+    pub async fn update(&mut self) -> Result<(), D::PresentError> {
         self.bouncing_ball_core.tick();
 
         // This operation cannot fail
