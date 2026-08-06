@@ -13,14 +13,18 @@ where
     C: PixelColor,
 {
     ball_color: C,
+    background_color: C,
 }
 
 impl<C> BouncingBallRenderer<C>
 where
     C: PixelColor,
 {
-    pub fn new(ball_color: C) -> Self {
-        BouncingBallRenderer { ball_color }
+    pub fn new(ball_color: C, background_color: C) -> Self {
+        BouncingBallRenderer {
+            ball_color,
+            background_color,
+        }
     }
 
     pub fn draw<D>(&self, snapshot: BouncingBallSnapshot, display: &mut D) -> Result<(), D::Error>
@@ -49,6 +53,10 @@ where
 
         Ok(())
     }
+
+    pub fn get_background_color(&self) -> &C {
+        &self.background_color
+    }
 }
 
 #[cfg(test)]
@@ -65,7 +73,7 @@ mod tests {
     #[ignore = "visual test only"]
     fn visual_display_test() {
         let mut display: SimulatorDisplay<BinaryColor> = SimulatorDisplay::new(Size::new(128, 64));
-        let renderer = BouncingBallRenderer::<BinaryColor>::new(BinaryColor::On);
+        let renderer = BouncingBallRenderer::<BinaryColor>::new(BinaryColor::On, BinaryColor::Off);
         let ball_one = Ball {
             x: 30,
             y: 30,
@@ -96,7 +104,7 @@ mod tests {
     fn mock_display_test() {
         let mut display = MockDisplay::<BinaryColor>::new();
 
-        let renderer = BouncingBallRenderer::<BinaryColor>::new(BinaryColor::On);
+        let renderer = BouncingBallRenderer::<BinaryColor>::new(BinaryColor::On, BinaryColor::Off);
         let ball_one = Ball {
             x: 2,
             y: 2,

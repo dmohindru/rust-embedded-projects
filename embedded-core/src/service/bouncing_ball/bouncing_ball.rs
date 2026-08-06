@@ -1,3 +1,5 @@
+use core::convert::Infallible;
+
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::PixelColor};
 
 use crate::{
@@ -16,16 +18,22 @@ where
 
 impl<D, const WIDTH: usize, const HEIGHT: usize, C: PixelColor> BouncingBall<D, WIDTH, HEIGHT, C>
 where
-    D: DrawTarget<Color = C> + Present,
+    D: DrawTarget<Color = C, Error = Infallible> + Present,
 {
-    pub fn tick(&mut self) {
+    pub async fn update(&mut self) -> Result<(), <D as Present>::Error> {
         self.bouncing_ball_core.tick();
-    }
 
-    pub async fn draw(&mut self) {
-        // self.renderer
-        //     .draw(self.bouncing_ball_core.snapshot(), &mut self.display)?;
-        // self.display.present().await.unwrap();
-        todo!()
+        // This operation cannot fail
+        self.display
+            .clear(*self.renderer.get_background_color())
+            .unwrap();
+
+        // This operation cannot fail
+        self.renderer
+            .draw(self.bouncing_ball_core.snapshot(), &mut self.display)
+            .unwrap();
+
+        self.display.present().await?;
+        Ok(())
     }
 }

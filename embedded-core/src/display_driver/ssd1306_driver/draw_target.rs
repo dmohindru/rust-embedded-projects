@@ -65,8 +65,7 @@ mod tests {
 
     #[test]
     fn should_set_pixels_in_display() {
-        let i2c_device = I2cMock::new(vec![]);
-        let mut display = Ssd1306_128x64::<_>::new(i2c_device, 0x00);
+        let mut display = get_display();
         let fill_style = PrimitiveStyle::with_fill(BinaryColor::On);
         Circle::new(Point::new(0, 0), 2)
             .into_styled(fill_style)
@@ -88,5 +87,46 @@ mod tests {
         assert_eq!(0x0, data[2]);
         assert_eq!(0x0, data[5]);
         device.done();
+    }
+
+    #[test]
+    fn should_clear_old_pixels_and_draw_new_ones() {
+        let mut display = get_display();
+        let fill_style = PrimitiveStyle::with_fill(BinaryColor::On);
+        Circle::new(Point::new(0, 0), 2)
+            .into_styled(fill_style)
+            .draw(&mut display);
+        Circle::new(Point::new(3, 0), 2)
+            .into_styled(fill_style)
+            .draw(&mut display);
+
+        display.clear(BinaryColor::Off);
+
+        Circle::new(Point::new(0, 2), 2)
+            .into_styled(fill_style)
+            .draw(&mut display);
+        Circle::new(Point::new(3, 2), 2)
+            .into_styled(fill_style)
+            .draw(&mut display);
+
+        let (mut device, frame_buffer) = display.free();
+
+        let data = frame_buffer.frame_data();
+        // Bytes where pixels should be set
+        assert_eq!(0xC, data[0]);
+        assert_eq!(0xC, data[1]);
+        assert_eq!(0xC, data[3]);
+        assert_eq!(0xC, data[4]);
+
+        // Randomly check of bytes that should not be set
+        assert_eq!(0x0, data[2]);
+        assert_eq!(0x0, data[5]);
+        device.done();
+    }
+
+    fn get_display() -> Ssd1306_128x64<I2cMock> {
+        let i2c_device = I2cMock::new(vec![]);
+        let display = Ssd1306_128x64::<_>::new(i2c_device, 0x00);
+        display
     }
 }
