@@ -20,7 +20,6 @@ where
 {
     pub fn tick(&mut self) {
         self.bouncing_ball_core.tick();
-        // todo!()
     }
 
     pub async fn draw(&mut self) {

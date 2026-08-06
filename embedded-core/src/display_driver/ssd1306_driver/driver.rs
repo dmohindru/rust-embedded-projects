@@ -117,7 +117,6 @@ where
         self.frame_buffer.set_pixel(x, y, BinaryColor::Off);
     }
 
-    //TODO Write test for it
     pub fn clear_frame_data(&mut self) {
         self.frame_buffer.clear_frame_data();
     }
@@ -241,6 +240,20 @@ mod tests {
     }
 
     #[test]
+    fn should_clear_all_pixel_in_framebuffer() {
+        let mut ssd1306_driver = get_ssd1306_device(&Vec::new());
+        ssd1306_driver.set_pixel(0, 0);
+        ssd1306_driver.set_pixel(0, 2);
+        ssd1306_driver.set_pixel(0, 4);
+        ssd1306_driver.set_pixel(0, 6);
+        ssd1306_driver.clear_frame_data();
+        let (mut device, framebuffer) = ssd1306_driver.free();
+        let bytes = framebuffer.frame_data();
+        assert_eq!(&[0; 1024], bytes);
+        device.done();
+    }
+
+    #[test]
     fn should_clear_pixel_in_framebuffer() {
         let mut ssd1306_driver = get_ssd1306_device(&Vec::new());
         ssd1306_driver.set_pixel(0, 0);
@@ -254,6 +267,7 @@ mod tests {
         assert_eq!(0x50, byte);
         device.done();
     }
+
     fn get_ssd1306_device(expectations: &Vec<I2cTransaction>) -> Ssd1306_128x64<I2cMock> {
         let i2c_device = I2cMock::new(expectations);
         Ssd1306_128x64::<_>::new(i2c_device, DEVICE_ADDRESS)

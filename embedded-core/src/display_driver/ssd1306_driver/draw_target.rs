@@ -35,6 +35,11 @@ where
         }
         Ok(())
     }
+
+    fn clear(&mut self, _: Self::Color) -> Result<(), Self::Error> {
+        self.clear_frame_data();
+        Ok(())
+    }
 }
 
 impl<D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize, const TX_BYTES: usize>
@@ -51,13 +56,37 @@ where
 mod tests {
     use super::*;
     use crate::display_driver::Ssd1306_128x64;
+    use embedded_graphics::{
+        geometry::Point,
+        primitives::{Circle, Primitive, PrimitiveStyle},
+        Drawable,
+    };
     use embedded_hal_mock::eh1::i2c::Mock as I2cMock;
 
     #[test]
     fn should_set_pixels_in_display() {
         let i2c_device = I2cMock::new(vec![]);
-        let display = Ssd1306_128x64::<_>::new(i2c_device, 0x00);
+        let mut display = Ssd1306_128x64::<_>::new(i2c_device, 0x00);
+        let fill_style = PrimitiveStyle::with_fill(BinaryColor::On);
+        Circle::new(Point::new(0, 0), 2)
+            .into_styled(fill_style)
+            .draw(&mut display);
+        Circle::new(Point::new(3, 0), 2)
+            .into_styled(fill_style)
+            .draw(&mut display);
 
-        let (_, frame_buffer) = display.free();
+        let (mut device, frame_buffer) = display.free();
+
+        let data = frame_buffer.frame_data();
+        // Bytes where pixels should be set
+        assert_eq!(0x3, data[0]);
+        assert_eq!(0x3, data[1]);
+        assert_eq!(0x3, data[3]);
+        assert_eq!(0x3, data[4]);
+
+        // Randomly check of bytes that should not be set
+        assert_eq!(0x0, data[2]);
+        assert_eq!(0x0, data[5]);
+        device.done();
     }
 }
