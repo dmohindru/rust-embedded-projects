@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::display_driver::Encode;
 pub enum CommandMode {
     Control,
