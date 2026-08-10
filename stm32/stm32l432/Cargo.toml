@@ -52,6 +52,8 @@ cortex-m-rt = "0.7.0"
 
 # Others
 static_cell = "2"
+
+embedded-graphics = "0.8.2"
 # embedded-hal = "1.0"
 # heapless = { version = "0.8", default-features = false }
 # nb = "1.0.0"

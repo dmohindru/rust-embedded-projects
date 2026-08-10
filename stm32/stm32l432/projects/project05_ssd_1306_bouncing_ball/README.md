@@ -1,6 +1,6 @@
 ## Introduction
 
-This example demonstrate the use of SSD 1306 display driver
+This example demonstrate the use of SSD 1306 display driver with bouncing ball service
 
 ## Features
 

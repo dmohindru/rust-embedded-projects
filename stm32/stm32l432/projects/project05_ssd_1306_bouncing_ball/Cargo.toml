@@ -26,3 +26,6 @@ embedded-core = { workspace = true }
 
 # Others
 static_cell = { workspace = true }
+
+# embedded graphics
+embedded-graphics = { workspace = true }
