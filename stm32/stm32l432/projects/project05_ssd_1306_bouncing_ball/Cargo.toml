@@ -15,6 +15,7 @@ embassy-time = { workspace = true }
 embassy-executor = { workspace = true }
 embassy-sync = { workspace = true }
 embassy-embedded-hal = { workspace = true }
+embassy-futures = { workspace = true }
 
 #stm32f3 (platform)
 embassy-stm32 = { workspace = true }
