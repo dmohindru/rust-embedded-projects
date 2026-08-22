@@ -11,9 +11,9 @@ use embassy_sync::{
     mutex::Mutex,
 };
 use embedded_alloc::Heap;
-use embedded_core::button::DebouncedButton;
 use embedded_core::display_driver::LedMatrixDriver;
 use embedded_core::frame::{Direction, Frame, FrameCursor};
+use embedded_core::input_device::button::DebouncedButton;
 use {defmt_rtt as _, panic_probe as _};
 
 #[global_allocator]

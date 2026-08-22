@@ -11,9 +11,9 @@ use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::{Channel, Receiver, Sender};
 use embassy_sync::mutex::Mutex;
 use embassy_time::{Delay, Timer};
-use embedded_core::button::DebouncedButton;
 use embedded_core::display_driver::Max7219;
 use embedded_core::frame::{decode_frames, Direction, FrameCursorCircular};
+use embedded_core::input_device::button::DebouncedButton;
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 

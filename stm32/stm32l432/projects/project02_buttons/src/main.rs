@@ -15,7 +15,7 @@ use embassy_sync::{
     mutex::{Mutex, MutexGuard},
 };
 use embassy_time::{Delay, Timer};
-use embedded_core::{button::DebouncedButton, frame::Direction};
+use embedded_core::{frame::Direction, input_device::button::DebouncedButton};
 use {defmt_rtt as _, panic_probe as _};
 
 type ButtonStateType = Mutex<ThreadModeRawMutex, Direction>;

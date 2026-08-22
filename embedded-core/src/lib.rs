@@ -1,5 +1,4 @@
 #![cfg_attr(not(test), no_std)]
-pub mod button;
 pub mod cursor;
 pub mod display;
 pub mod display_driver;
