@@ -10,8 +10,8 @@ use embassy_sync::{
 };
 use embassy_time::{Delay, Timer};
 use embedded_core::{
-    button::{ActiveLevel, DebouncedButton},
     frame::Direction,
+    input_device::button::{ActiveLevel, DebouncedButton},
 };
 use {defmt_rtt as _, panic_probe as _};
 

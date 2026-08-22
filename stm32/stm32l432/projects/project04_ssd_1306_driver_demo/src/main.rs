@@ -20,7 +20,7 @@ use embassy_sync::{
     mutex::Mutex,
 };
 use embassy_time::Delay;
-use embedded_core::{button::DebouncedButton, display_driver::Ssd1306_128x64};
+use embedded_core::{display_driver::Ssd1306_128x64, input_device::button::DebouncedButton};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 

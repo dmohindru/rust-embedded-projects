@@ -20,10 +20,10 @@ use embassy_sync::{
 };
 use embassy_time::{Delay, Timer};
 use embedded_core::{
-    button::DebouncedButton,
     cursor::StepCursorCircular,
     display_driver::Ht16K33,
     frame::{Direction, FrameCursorCircular, decode_frames},
+    input_device::button::DebouncedButton,
 };
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};

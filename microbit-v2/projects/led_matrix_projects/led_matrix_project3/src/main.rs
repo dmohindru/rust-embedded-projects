@@ -10,10 +10,10 @@ use embassy_sync::{
 };
 use embassy_time::Timer;
 use embedded_alloc::Heap;
-use embedded_core::button::DebouncedButton;
 use embedded_core::cursor::StepCursorCircular;
 use embedded_core::display_driver::LedMatrixDriver;
 use embedded_core::frame::{Direction, Frame, FrameCursorCircular};
+use embedded_core::input_device::button::DebouncedButton;
 use {defmt_rtt as _, panic_probe as _};
 
 #[global_allocator]

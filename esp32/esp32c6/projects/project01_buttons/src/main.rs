@@ -8,7 +8,7 @@ use embassy_sync::{
     mutex::{Mutex, MutexGuard},
 };
 use embassy_time::{Delay, Timer};
-use embedded_core::{button::DebouncedButton, frame::Direction};
+use embedded_core::{frame::Direction, input_device::button::DebouncedButton};
 
 use esp_backtrace as _;
 use esp_println as _;

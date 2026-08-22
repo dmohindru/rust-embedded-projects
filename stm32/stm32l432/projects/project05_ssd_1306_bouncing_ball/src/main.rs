@@ -22,7 +22,8 @@ use embassy_sync::{
 };
 use embassy_time::{Delay, Timer};
 use embedded_core::{
-    button::DebouncedButton, display_driver::Ssd1306_128x64, service::bouncing_ball::BouncingBall,
+    display_driver::Ssd1306_128x64, input_device::button::DebouncedButton,
+    service::bouncing_ball::BouncingBall,
 };
 use embedded_graphics::pixelcolor::BinaryColor;
 use static_cell::StaticCell;
