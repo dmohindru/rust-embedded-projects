@@ -1,5 +1,10 @@
 use embedded_hal_async::i2c::I2c;
 
+pub enum Type {
+    White,
+    Black,
+}
+
 pub struct Nunchuk<D>
 where
     D: I2c,
