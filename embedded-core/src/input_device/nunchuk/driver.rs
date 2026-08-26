@@ -6,6 +6,16 @@ pub enum NunchukType {
     Black,
 }
 
+pub struct NunchukReport {
+    pub x_axis: u8,
+    pub y_axis: u8,
+    pub x_acceleration: u16,
+    pub y_acceleration: u16,
+    pub z_acceleration: u16,
+    pub c_button_pressed: bool,
+    pub z_button_pressed: bool,
+}
+
 pub struct Nunchuk<D>
 where
     D: I2c,
@@ -45,6 +55,31 @@ where
             }
         }
         Ok(())
+    }
+
+    pub async fn poll(&mut self) -> Result<NunchukReport, D::Error> {
+        let mut data: [u8; 6] = [0; 6];
+        let mask: u8 = 0x03;
+        self.device.read(self.address, &mut data).await?;
+        let x_acceleration: u16 = (data[2] << 2) | (data[5] >> 2 & mask);
+        let y_acceleration: u16 = (data[3] << 2) | (data[5] >> 4 & mask);
+        let z_acceleration: u16 = (data[4] << 2) | (data[5] >> 6 & mask);
+        let c_button_pressed = if data[5] & 0x01 == 0 { true } else { false };
+        let z_button_pressed = if (data[5] >> 1) & 0x01 == 0 {
+            true
+        } else {
+            false
+        };
+        let nunchuk_report = NunchukReport {
+            x_axis: data[0],
+            y_axis: data[1],
+            x_acceleration,
+            y_acceleration,
+            z_acceleration,
+            c_button_pressed,
+            z_button_pressed,
+        };
+        Ok(nunchuk_report)
     }
 }
 
