@@ -59,11 +59,11 @@ where
 
     pub async fn poll(&mut self) -> Result<NunchukReport, D::Error> {
         let mut data: [u8; 6] = [0; 6];
-        let mask: u8 = 0x03;
+        self.device.write(self.address, &[0x00]).await?;
         self.device.read(self.address, &mut data).await?;
-        let x_acceleration: u16 = (data[2] << 2) | (data[5] >> 2 & mask);
-        let y_acceleration: u16 = (data[3] << 2) | (data[5] >> 4 & mask);
-        let z_acceleration: u16 = (data[4] << 2) | (data[5] >> 6 & mask);
+        let x_acceleration: u16 = Self::combine_10bits(data[2], data[5] >> 2);
+        let y_acceleration: u16 = Self::combine_10bits(data[3], data[5] >> 4);
+        let z_acceleration: u16 = Self::combine_10bits(data[4], data[5] >> 6);
         let c_button_pressed = if data[5] & 0x01 == 0 { true } else { false };
         let z_button_pressed = if (data[5] >> 1) & 0x01 == 0 {
             true
@@ -80,6 +80,10 @@ where
             z_button_pressed,
         };
         Ok(nunchuk_report)
+    }
+
+    fn combine_10bits(high: u8, low: u8) -> u16 {
+        ((high as u16) << 2) | ((low & 0x03) as u16)
     }
 }
 
@@ -136,6 +140,29 @@ mod tests {
             ],
         );
         nunchuk_device.initialize().await.unwrap();
+        nunchuk_device.free().done();
+    }
+
+    #[tokio::test]
+    async fn should_provide_nunchuk_report() {
+        let read_data: Vec<u8> = vec![0x32, 0x64, 0x80, 0x40, 0x20, 0b1111_1100];
+        let write_transaction = I2cTransaction::write(DEVICE_ADDRESS, vec![0x00]);
+        let read_transaction = I2cTransaction::read(DEVICE_ADDRESS, read_data.clone());
+        let mut nunchuk_device = get_nunchuk_device(
+            NunchukType::Black,
+            &vec![write_transaction, read_transaction],
+        );
+        let nunchuk_report = nunchuk_device.poll().await.unwrap();
+        assert_eq!(read_data[0], nunchuk_report.x_axis);
+        assert_eq!(read_data[1], nunchuk_report.y_axis);
+        assert!(nunchuk_report.c_button_pressed);
+        assert!(nunchuk_report.z_button_pressed);
+        // 10bit x acceleration data
+        assert_eq!(0x0203, nunchuk_report.x_acceleration);
+        // 10bit y acceleration data
+        assert_eq!(0x0103, nunchuk_report.y_acceleration);
+        // 10bit z acceleration data
+        assert_eq!(0x0083, nunchuk_report.z_acceleration);
         nunchuk_device.free().done();
     }
 
