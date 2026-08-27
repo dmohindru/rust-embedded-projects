@@ -1,3 +1,3 @@
 mod command;
 mod driver;
-pub use driver::Nunchuk;
+pub use driver::{Nunchuk, NunchukReport, NunchukType};
