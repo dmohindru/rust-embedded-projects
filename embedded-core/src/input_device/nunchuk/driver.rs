@@ -64,8 +64,8 @@ where
         let x_acceleration: u16 = Self::combine_10bits(data[2], data[5] >> 2);
         let y_acceleration: u16 = Self::combine_10bits(data[3], data[5] >> 4);
         let z_acceleration: u16 = Self::combine_10bits(data[4], data[5] >> 6);
-        let c_button_pressed = if data[5] & 0x01 == 0 { true } else { false };
-        let z_button_pressed = if (data[5] >> 1) & 0x01 == 0 {
+        let z_button_pressed = if data[5] & 0x01 == 0 { true } else { false };
+        let c_button_pressed = if (data[5] >> 1) & 0x01 == 0 {
             true
         } else {
             false
