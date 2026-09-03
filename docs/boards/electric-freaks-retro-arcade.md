@@ -131,3 +131,8 @@ The Arcade Shield exposes:
 - Display orientation / MADCTL configuration
 - Meaning of DISPLAY_CFG0/1/2
 - Exact handling of P0.01 being shared by button DATA and display MISO
+
+### Links
+
+https://arcade.makecode.com/hardware/adding
+https://github.com/microsoft/pxt-arcade-hardware-designs/tree/master/microbit-shield
