@@ -7,3 +7,6 @@ pub mod input;
 pub mod input_device;
 pub mod service;
 pub mod shift_register;
+
+#[cfg(test)]
+mod mocks;
