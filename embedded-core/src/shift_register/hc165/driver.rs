@@ -97,12 +97,16 @@ where
 mod tests {
     use super::*;
     use crate::mocks::FakeDelay;
-    use embedded_hal_mock::eh1::digital::{Mock as PinMock, State, Transaction as PinTransaction};
+    use embedded_hal_mock::eh1::digital::{
+        Mock as PinMock, State as PinState, Transaction as PinTransaction,
+    };
+    use embedded_hal_mock::eh1::MockError;
+    use std::io;
 
     #[test]
     fn should_create_new_instance_of_hc195_and_set_clk_pin_low() {
         let shift_load_transactions: [PinTransaction; 0] = [];
-        let clk_transactions = [PinTransaction::set(State::Low)];
+        let clk_transactions = [PinTransaction::set(PinState::Low)];
         let data_in_transactions: [PinTransaction; 0] = [];
         let clock_period: u32 = 250;
         let hc165_device = get_hc165_device(
@@ -118,18 +122,67 @@ mod tests {
         hc165.data_in.done();
     }
 
-    #[test]
-    fn should_return_error_for_input_pin_error_during_read() {
-        todo!()
+    #[tokio::test]
+    async fn should_return_error_for_input_pin_error_during_read() {
+        let shift_load_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let clk_transactions = [PinTransaction::set(PinState::Low)];
+        let data_in_transactions =
+            [PinTransaction::get(PinState::High).with_error(MockError::Io(io::ErrorKind::Other))];
+        let clock_period: u32 = 250;
+        let mut hc165_device = get_hc165_device(
+            &shift_load_transactions,
+            &clk_transactions,
+            &data_in_transactions,
+            clock_period,
+        );
+        let result = hc165_device.read::<1>().await;
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            Error::InputError(_) => {}
+            _ => {
+                panic!("Expected Input Error")
+            }
+        }
+
+        let mut hc165 = hc165_device.free();
+        hc165.shift_load.done();
+        hc165.clk.done();
+        hc165.data_in.done();
     }
 
-    #[test]
-    fn should_return_error_for_output_pin_error_during_read() {
-        todo!()
+    #[tokio::test]
+    async fn should_return_error_for_output_pin_error_during_read() {
+        let shift_load_transactions =
+            [PinTransaction::set(PinState::Low).with_error(MockError::Io(io::ErrorKind::Other))];
+        let clk_transactions = [PinTransaction::set(PinState::Low)];
+        let data_in_transactions: [PinTransaction; 0] = [];
+        let clock_period: u32 = 250;
+        let mut hc165_device = get_hc165_device(
+            &shift_load_transactions,
+            &clk_transactions,
+            &data_in_transactions,
+            clock_period,
+        );
+        let result = hc165_device.read::<1>().await;
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            Error::OutputError(_) => {}
+            _ => {
+                panic!("Expected Output Error")
+            }
+        }
+
+        let mut hc165 = hc165_device.free();
+        hc165.shift_load.done();
+        hc165.clk.done();
+        hc165.data_in.done();
     }
 
-    #[test]
-    fn should_return_available_serial_data() {
+    #[tokio::test]
+    async fn should_return_available_serial_data() {
         todo!()
     }
 
