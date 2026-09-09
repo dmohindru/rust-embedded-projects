@@ -26,13 +26,14 @@ where
     D: DelayNs,
 {
     pub fn new(
-        shift_load: O,
+        mut shift_load: O,
         mut clk: O,
         data_in: I,
         delay: D,
         clock_period_us: u32,
     ) -> Result<Self, Error<I::Error, O::Error>> {
         clk.set_low().map_err(|e| Error::OutputError(e))?;
+        shift_load.set_high().map_err(|e| Error::OutputError(e))?;
 
         Ok(Self {
             shift_load,
@@ -105,7 +106,7 @@ mod tests {
 
     #[test]
     fn should_create_new_instance_of_hc195_and_set_clk_pin_low() {
-        let shift_load_transactions: [PinTransaction; 0] = [];
+        let shift_load_transactions = [PinTransaction::set(PinState::High)];
         let clk_transactions = [PinTransaction::set(PinState::Low)];
         let data_in_transactions: [PinTransaction; 0] = [];
         let clock_period: u32 = 250;
@@ -125,6 +126,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_error_for_input_pin_error_during_read() {
         let shift_load_transactions = [
+            PinTransaction::set(PinState::High),
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
         ];
@@ -155,8 +157,10 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_for_output_pin_error_during_read() {
-        let shift_load_transactions =
-            [PinTransaction::set(PinState::Low).with_error(MockError::Io(io::ErrorKind::Other))];
+        let shift_load_transactions = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low).with_error(MockError::Io(io::ErrorKind::Other)),
+        ];
         let clk_transactions = [PinTransaction::set(PinState::Low)];
         let data_in_transactions: [PinTransaction; 0] = [];
         let clock_period: u32 = 250;
@@ -184,6 +188,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_available_serial_data() {
         let shift_load_transactions = [
+            PinTransaction::set(PinState::High),
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
         ];
