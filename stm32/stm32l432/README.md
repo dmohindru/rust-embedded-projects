@@ -11,6 +11,7 @@ STM32L432KC based examples
 - **[Project04](./projects/project04_ssd_1306_driver_demo/README.md)**: An example to demo usage of ssd 1306 driver
 - **[Project05](./projects/project05_ssd_1306_bouncing_ball/README.md)**: An example to demo usage of ssd 1306 driver with bouncing ball program
 - **[Project06](./projects/project06_nunchuk_driver_demo/README.md)**: An example to demo usage of nunchuk driver
+- **[Project07](./projects/project07_74hc165_driver_demo/README.md)**: An example to demo usage of 74HC165 driver
 
 # Documentation
 

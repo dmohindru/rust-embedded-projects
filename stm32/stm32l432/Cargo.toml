@@ -8,6 +8,7 @@ members = [
   "projects/project04_ssd_1306_driver_demo",
   "projects/project05_ssd_1306_bouncing_ball",
   "projects/project06_nunchuk_driver_demo",
+  "projects/project07_74hc165_driver_demo",
 ]
 
 [workspace.dependencies]
