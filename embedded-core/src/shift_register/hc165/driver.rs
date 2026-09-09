@@ -183,7 +183,98 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_available_serial_data() {
-        todo!()
+        let shift_load_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let clk_transactions = [
+            PinTransaction::set(PinState::Low),
+            // First byte clock
+            // Bit 0
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 1
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 2
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 3
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 4
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 5
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 6
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 7
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Second byte clock
+            // Bit 0
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 1
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 2
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 3
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 4
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 5
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 6
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            // Bit 7
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+        ];
+        let data_in_transactions = [
+            // 0xAA
+            PinTransaction::get(PinState::High),
+            PinTransaction::get(PinState::Low),
+            PinTransaction::get(PinState::High),
+            PinTransaction::get(PinState::Low),
+            PinTransaction::get(PinState::High),
+            PinTransaction::get(PinState::Low),
+            PinTransaction::get(PinState::High),
+            PinTransaction::get(PinState::Low),
+            // 0x55
+            PinTransaction::get(PinState::Low),
+            PinTransaction::get(PinState::High),
+            PinTransaction::get(PinState::Low),
+            PinTransaction::get(PinState::High),
+            PinTransaction::get(PinState::Low),
+            PinTransaction::get(PinState::High),
+            PinTransaction::get(PinState::Low),
+            PinTransaction::get(PinState::High),
+        ];
+        let clock_period: u32 = 1;
+        let mut hc165_device = get_hc165_device(
+            &shift_load_transactions,
+            &clk_transactions,
+            &data_in_transactions,
+            clock_period,
+        );
+        let data = hc165_device.read::<2>().await.unwrap();
+        assert_eq!(0xAA, data[0]);
+        assert_eq!(0x55, data[1]);
+
+        let mut hc165 = hc165_device.free();
+        hc165.shift_load.done();
+        hc165.clk.done();
+        hc165.data_in.done();
     }
 
     fn get_hc165_device(
