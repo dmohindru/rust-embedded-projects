@@ -39,6 +39,11 @@ nRF52833 P0.09
 | 1 | btn_up |
 | 0 | btn_left |
 
+**note**: Config is active low, means
+
+- bit value 0: pressed
+- bit value 1: not pressed
+
 ---
 
 **Byte 1 - Config data**
