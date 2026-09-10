@@ -46,10 +46,6 @@ flamegraph.svg
 perf.data
 perf.data.old
 
-# Build outputs (if building for multiple targets)
-.cargo/
-!.cargo/config.toml
-
 # Python / virtualenv (if you have Python scripts)
 venv/
 env/

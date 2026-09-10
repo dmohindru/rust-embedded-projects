@@ -1,25 +1,5 @@
 ## Workspace for micro:bit v2 projects and shared drivers.
 
-### Structure:
-
-- [**drivers/**](./drivers/): hardware driver crates (blocking, HAL-agnostic)
-- [**crates/**](./crates/): higher-level helpers and adapters
-- [**projects/**](./projects/): microbit binaries that compose drivers and crates
-
-## BBC micro:bit V2 Projects (Embassy + TDD)
-
-These projects explore micro:bit v2 onboard peripherals and async firmware design.
-
-| #   | Project                                                     | Focus                      | Key Hardware                                     | Concepts                                        |
-| --- | ----------------------------------------------------------- | -------------------------- | ------------------------------------------------ | ----------------------------------------------- |
-| 1   | [Compass + Level Checker](projects/project01_compass_level) | Sensors + State Machine    | Accelerometer, Magnetometer, Buttons, LEDs, UART | async tasks, FSM, UART logging                  |
-| 2   | [Dodge Game](projects/project02_dodge_game)                 | Game loop + PWM            | Buttons, LEDs, Speaker, Touch                    | timing, task coordination, sound output         |
-| 3   | [Billboard UART](projects/project03_billboard_uart)         | Host–device link over UART | UART, LEDs                                       | protocol design, shared lib, CLI                |
-| 4   | [Billboard BLE](projects/project04_billboard_ble)           | Wireless communication     | BLE, LEDs                                        | GATT services, Android integration              |
-| 5   | [Env Monitor](projects/project05_env_monitor)               | Sensors + Logging          | Temperature, Microphone, Buttons, Speaker, UART  | multi-mode app, periodic tasks, threshold logic |
-
-**Recommended order:** 1 → 2 → 3 → 4 → 5
-
 ## BBC micro:bit V2 — Onboard Sensors & Peripherals
 
 ### 🎛️ Onboard Sensors
@@ -79,3 +59,8 @@ These projects explore micro:bit v2 onboard peripherals and async firmware desig
 
 - **UART and SPI Support**  
   Available via programmable pins.
+
+### Projects
+
+- [01 Hello world](./projects/project00_hello_world/README.md): A simple hello world project
+- [02 74HC165 Demo](./projects/project01_hc165_game_shield/): Demo program to discover bit mapping for button for elecfreaks retro game console
