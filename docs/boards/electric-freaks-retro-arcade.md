@@ -10,35 +10,48 @@
 
 pxt-arcade/libs/hw---n3/config.ts
 
-### NOTE:
+## Pin Mapping
 
-PIN_BTN_LEFT .. PIN_BTN_MENU are logical MakeCode button IDs,
+### Microbit-v2 pins
 
-NOT physical nRF52833 GPIO numbers.
+Arcade Shield INSR_LATCH
+micro:bit edge connector P9
+nRF52833 P0.09
+| Shield Pin | Micro:bit edge pin | nRF52833 pin |
+|------------|--------------------|--------------|
+| INSR_LATCH | P9 | P0.09 |
+| SR_CLK | P20 | P1.00 |
+| INSR0_DATA | P14 | P0.01 |
 
-Their mapping to individual 74HC165 bits is still to be determined.
+---
 
-## Buttons
+### Serial input data bitmaps
 
-Button interface:
-DATA = nRF P0.01
-CLOCK = nRF P1.00
-LATCH = nRF P0.09
+**Byte 0 - Button data**
+|bit n| button |
+|-----|--------|
+| 7 | GND |
+| 6 | menu |
+| 5 | btn_b |
+| 4 | btn_a |
+| 3 | btn_right |
+| 2 | btn_down |
+| 1 | btn_up |
+| 0 | btn_left |
 
-Logical buttons:
-LEFT = MakeCode logical pin 1050
-UP = MakeCode logical pin 1051
-DOWN = MakeCode logical pin 1052
-RIGHT = MakeCode logical pin 1053
-A = MakeCode logical pin 1054
-B = MakeCode logical pin 1055
-MENU = MakeCode logical pin 1056
+---
 
-TODO:
-Determine which 74HC165 output bit corresponds to each
-logical button.
+**Byte 1 - Config data**
+
+- Value: 0x30
+- HW_CFG3 = 0
+- HW_CFG2 = 0
+- HW_CFG1 = 1 -> ST7735 (CFG1=0x603 or 0x12c2d)
+- HW_CFG0 = 1 -> Not rotated
 
 ## TFT Display
+
+// TODO Verify this
 
 Display controller:
 ST7735
@@ -65,14 +78,6 @@ P0.01 is shared by: - button DATA - display MISO
 
     Speaker / sound = nRF P0.00
 
-## micro:bit Edge Connector
-
-The Arcade Shield exposes:
-
-    micro:bit P0 -> nRF P0.02
-    micro:bit P1 -> nRF P0.03
-    micro:bit P2 -> nRF P0.04
-
 ## Jacdac
 
     Jacdac / accessibility pin = nRF P0.12
@@ -88,49 +93,6 @@ The Arcade Shield exposes:
     DISPLAY_CFG0 = 0x00000080
     DISPLAY_CFG1 = 0x00000603
     DISPLAY_CFG2 = 8
-
-## A compact table version
-
-| Hardware     | Signal    | nRF52833 pin | Notes                       |
-| ------------ | --------- | -----------: | --------------------------- |
-| Buttons      | DATA      |    **P0.01** | Serial button data          |
-| Buttons      | CLOCK     |    **P1.00** | Button shift/register clock |
-| Buttons      | LATCH     |    **P0.09** | Button latch                |
-| Display      | SCK       |    **P0.17** | SPI clock                   |
-| Display      | MOSI      |    **P0.13** | SPI data out                |
-| Display      | MISO      |    **P0.01** | Shared with button DATA     |
-| Display      | Backlight |    **P0.26** | GPIO                        |
-| Display      | D/C       |    **P0.10** | Data/command                |
-| Display      | RESET     |    **P1.02** | Display reset               |
-| Speaker      | SOUND     |    **P0.00** | Audio output                |
-| Jacdac       | TX        |    **P0.12** | Accessibility/Jacdac        |
-| micro:bit P0 | —         |    **P0.02** | Edge connector              |
-| micro:bit P1 | —         |    **P0.03** | Edge connector              |
-| micro:bit P2 | —         |    **P0.04** | Edge connector              |
-
-## Current understanding
-
-### KNOWN
-
-- MCU is nRF52833
-- Display is 160x128
-- Display interface uses SPI + GPIO
-- Display pins are known
-- Button interface uses DATA/CLOCK/LATCH
-- Button interface is associated with a shift-register design
-- Speaker pin is known
-- micro:bit P0/P1/P2 mappings are known
-
-### UNKNOWN
-
-- Exact 74HC165 configuration
-- Exact button -> shift-register-bit mapping
-- Button active-high/active-low behaviour
-- Exact ST7735 initialization sequence
-- SPI mode / frequency used by the display
-- Display orientation / MADCTL configuration
-- Meaning of DISPLAY_CFG0/1/2
-- Exact handling of P0.01 being shared by button DATA and display MISO
 
 ### Links
 
