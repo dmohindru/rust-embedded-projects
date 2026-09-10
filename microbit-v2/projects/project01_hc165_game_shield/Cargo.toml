@@ -9,6 +9,7 @@ embassy-executor = { workspace = true }
 
 embassy-time = { workspace = true }
 embassy-nrf = { workspace = true }
+embedded-core = { workspace = true }
 
 defmt = { workspace = true }
 defmt-rtt = { workspace = true }

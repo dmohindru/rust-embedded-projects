@@ -3,41 +3,33 @@
 
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer};
+use embassy_nrf::gpio::{Input, Level, Output, OutputDrive, Pull};
+use embassy_time::{Delay, Timer};
+use embedded_core::shift_register::Hc165;
 use {defmt_rtt as _, panic_probe as _};
 
-/// Fast task: logs every 500ms
-#[embassy_executor::task]
-async fn task_fast() {
-    loop {
-        info!("Fast task: Hello from Embassy! (500ms interval)");
-        Timer::after(Duration::from_millis(500)).await;
-    }
-}
-
-/// Slow task: logs every 2 seconds
-#[embassy_executor::task]
-async fn task_slow() {
-    loop {
-        info!("Slow task: Hello from microbit v2! (2s interval)");
-        Timer::after(Duration::from_secs(2)).await;
-    }
-}
-
 #[embassy_executor::main]
-async fn main(spawner: Spawner) {
-    embassy_nrf::init(Default::default());
-    info!("=== Embassy Async Runtime Demo ===");
-    info!("Starting two concurrent tasks...");
+async fn main(_spawner: Spawner) {
+    let p = embassy_nrf::init(Default::default());
+    // Arcade Shield INSR_LATCH
+    // micro:bit edge connector P9
+    // nRF52833 P0.09
+    let shift_load = Output::new(p.P0_09, Level::High, OutputDrive::Standard);
+    // Arcade Shield SR_CLK
+    // micro:bit edge connector P20
+    // nRF52833 P1.00
+    let clk = Output::new(p.P1_00, Level::High, OutputDrive::Standard);
+    // Arcade Shield INSR0_DATA
+    // micro:bit edge connector P14
+    // nRF52833 P0.01
+    let data_in = Input::new(p.P0_01, Pull::Down);
 
-    // Spawn both tasks on the executor
-    spawner
-        .spawn(task_fast())
-        .expect("Failed to spawn fast task");
-    spawner
-        .spawn(task_slow())
-        .expect("Failed to spawn slow task");
+    let mut hc165_device = Hc165::new(shift_load, clk, data_in, Delay, 4).unwrap();
 
-    // Main task completes, executor keeps running the spawned tasks
-    info!("Main task complete, executor running...");
+    loop {
+        let data = hc165_device.read::<2>().await.unwrap();
+        info!("Button Data: {=u8:02x}", data[0]);
+        info!("Config Data: {=u8:02x}", data[1]);
+        Timer::after_millis(200).await;
+    }
 }
