@@ -1,3 +1,3 @@
 mod make_code_input;
 
-pub use make_code_input::InputReport;
+pub use make_code_input::{InputReport, MakeCodeInput};
