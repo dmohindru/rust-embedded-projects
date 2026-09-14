@@ -1,3 +1,4 @@
 mod driver;
+mod serial_input;
 
-pub use driver::Hc165;
+pub use driver::{Error, Hc165};
