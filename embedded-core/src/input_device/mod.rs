@@ -1,4 +1,5 @@
 pub mod button;
+pub mod make_code_input;
 pub mod nunchuk;
 
 trait Encode {

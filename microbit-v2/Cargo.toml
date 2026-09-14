@@ -3,6 +3,7 @@ members = [
     "projects/project00_hello_world",
     "projects/led_matrix_projects/*",
     "projects/project01_hc165_game_shield",
+    "projects/project02_make_code_input_demo",
 ]
 resolver = "2"
 
