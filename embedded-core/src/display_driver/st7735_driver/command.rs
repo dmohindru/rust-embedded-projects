@@ -4,6 +4,10 @@ pub enum Command {
     SWRESET,
     SLPOUT,
     FRMCTR1([u8; 3]),
+    FRMCTR2([u8; 3]),
+    FRMCTR3([u8; 6]),
+    INVCTR(u8),
+    PWCTR1([u8; 3]),
 }
 
 impl Encode for Command {
@@ -22,6 +26,36 @@ impl Encode for Command {
                 out[1] = parameters[0] & 0x0F;
                 out[2] = parameters[1] & 0x3F;
                 out[3] = parameters[2] & 0x3F;
+                4
+            }
+            Command::FRMCTR2(parameters) => {
+                out[0] = 0xB2;
+                out[1] = parameters[0] & 0x0F;
+                out[2] = parameters[1] & 0x3F;
+                out[3] = parameters[2] & 0x3F;
+                4
+            }
+            Command::FRMCTR3(parameters) => {
+                out[0] = 0xB3;
+                out[1] = parameters[0] & 0x0F;
+                out[2] = parameters[1] & 0x3F;
+                out[3] = parameters[2] & 0x3F;
+                out[4] = parameters[0] & 0x0F;
+                out[5] = parameters[1] & 0x3F;
+                out[6] = parameters[2] & 0x3F;
+                7
+            }
+            Command::INVCTR(parameter) => {
+                out[0] = 0xB4;
+                out[1] = *parameter & 0x07;
+                2
+            }
+            Command::PWCTR1(parameters) => {
+                out[0] = 0xC0;
+                out[1] = parameters[0];
+                out[2] = parameters[1] & 0x1F;
+                let parameter3 = parameters[2] << 6;
+                out[3] = (parameters[2] << 6) | 0x04;
                 4
             }
         };
@@ -61,5 +95,54 @@ mod tests {
         assert_eq!(0x0F, out[1]);
         assert_eq!(0x3F, out[2]);
         assert_eq!(0x3F, out[3]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_frmctr2_command() {
+        let command = Command::FRMCTR2([0xFF, 0xFF, 0xFF]);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(4, len);
+        assert_eq!(0xB2, out[0]);
+        assert_eq!(0x0F, out[1]);
+        assert_eq!(0x3F, out[2]);
+        assert_eq!(0x3F, out[3]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_frmctr3_command() {
+        let command = Command::FRMCTR3([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+        let mut out: [u8; 7] = [0; 7];
+        let len = command.encode(&mut out);
+        assert_eq!(7, len);
+        assert_eq!(0xB3, out[0]);
+        assert_eq!(0x0F, out[1]);
+        assert_eq!(0x3F, out[2]);
+        assert_eq!(0x3F, out[3]);
+        assert_eq!(0x0F, out[4]);
+        assert_eq!(0x3F, out[5]);
+        assert_eq!(0x3F, out[6]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_invctr_command() {
+        let command = Command::INVCTR(0xFF);
+        let mut out: [u8; 2] = [0; 2];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        assert_eq!(0xB4, out[0]);
+        assert_eq!(0x07, out[1]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_pwctr1_command() {
+        let command = Command::PWCTR1([0xFF, 0xFF, 0xFF]);
+        let mut out: [u8; 4] = [0; 4];
+        let len = command.encode(&mut out);
+        assert_eq!(4, len);
+        assert_eq!(0xC0, out[0]);
+        assert_eq!(0xFF, out[1]);
+        assert_eq!(0x1F, out[2]);
+        assert_eq!(0xC4, out[3]);
     }
 }
