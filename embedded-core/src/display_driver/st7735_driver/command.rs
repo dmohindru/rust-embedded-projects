@@ -8,6 +8,12 @@ pub enum Command {
     FRMCTR3([u8; 6]),
     INVCTR(u8),
     PWCTR1([u8; 3]),
+    PWCTR2(u8),
+    PWCTR3([u8; 2]),
+    PWCTR4([u8; 2]),
+    PWCTR5([u8; 2]),
+    VMCTR1(u8),
+    MADCTL(u8),
 }
 
 impl Encode for Command {
@@ -54,9 +60,41 @@ impl Encode for Command {
                 out[0] = 0xC0;
                 out[1] = parameters[0];
                 out[2] = parameters[1] & 0x1F;
-                let parameter3 = parameters[2] << 6;
                 out[3] = (parameters[2] << 6) | 0x04;
                 4
+            }
+            Command::PWCTR2(parameter) => {
+                out[0] = 0xC1;
+                out[1] = *parameter & 0xCF;
+                2
+            }
+            Command::PWCTR3(parameters) => {
+                out[0] = 0xC2;
+                out[1] = parameters[0];
+                out[2] = parameters[1];
+                3
+            }
+            Command::PWCTR4(parameters) => {
+                out[0] = 0xC3;
+                out[1] = parameters[0];
+                out[2] = parameters[1];
+                3
+            }
+            Command::PWCTR5(parameters) => {
+                out[0] = 0xC4;
+                out[1] = parameters[0];
+                out[2] = parameters[1];
+                3
+            }
+            Command::VMCTR1(parameter) => {
+                out[0] = 0xC5;
+                out[1] = *parameter & 0x3F;
+                2
+            }
+            Command::MADCTL(parameter) => {
+                out[0] = 0x36;
+                out[1] = *parameter & 0xFC;
+                2
             }
         };
         length
@@ -144,5 +182,68 @@ mod tests {
         assert_eq!(0xFF, out[1]);
         assert_eq!(0x1F, out[2]);
         assert_eq!(0xC4, out[3]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_pwctr2_command() {
+        let command = Command::PWCTR2(0xFF);
+        let mut out: [u8; 2] = [0; 2];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        assert_eq!(0xC1, out[0]);
+        assert_eq!(0xCF, out[1]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_pwctr3_command() {
+        let command = Command::PWCTR3([0xFF, 0xFF]);
+        let mut out: [u8; 3] = [0; 3];
+        let len = command.encode(&mut out);
+        assert_eq!(3, len);
+        assert_eq!(0xC2, out[0]);
+        assert_eq!(0xFF, out[1]);
+        assert_eq!(0xFF, out[2]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_pwctr4_command() {
+        let command = Command::PWCTR4([0xFF, 0xFF]);
+        let mut out: [u8; 3] = [0; 3];
+        let len = command.encode(&mut out);
+        assert_eq!(3, len);
+        assert_eq!(0xC3, out[0]);
+        assert_eq!(0xFF, out[1]);
+        assert_eq!(0xFF, out[2]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_pwctr5_command() {
+        let command = Command::PWCTR5([0xFF, 0xFF]);
+        let mut out: [u8; 3] = [0; 3];
+        let len = command.encode(&mut out);
+        assert_eq!(3, len);
+        assert_eq!(0xC4, out[0]);
+        assert_eq!(0xFF, out[1]);
+        assert_eq!(0xFF, out[2]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_vmctr1_command() {
+        let command = Command::VMCTR1(0xFF);
+        let mut out: [u8; 2] = [0; 2];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        assert_eq!(0xC5, out[0]);
+        assert_eq!(0x3F, out[1]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_madctl_command() {
+        let command = Command::MADCTL(0xFF);
+        let mut out: [u8; 2] = [0; 2];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        assert_eq!(0x36, out[0]);
+        assert_eq!(0xFC, out[1]);
     }
 }
