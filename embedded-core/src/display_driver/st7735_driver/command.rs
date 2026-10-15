@@ -1,5 +1,11 @@
 use crate::display_driver::Encode;
 
+pub enum ColorFormat {
+    TwelveBPP,
+    SixteenBPP,
+    EighteenBPP,
+}
+
 pub enum Command {
     SWRESET,
     SLPOUT,
@@ -14,6 +20,11 @@ pub enum Command {
     PWCTR5([u8; 2]),
     VMCTR1(u8),
     MADCTL(u8),
+    COLMOD(ColorFormat),
+    GAMCTRP1([u8; 16]),
+    GAMCTRN1([u8; 16]),
+    DISPON,
+    NORON,
 }
 
 impl Encode for Command {
@@ -95,6 +106,37 @@ impl Encode for Command {
                 out[0] = 0x36;
                 out[1] = *parameter & 0xFC;
                 2
+            }
+            Command::COLMOD(format) => {
+                out[0] = 0x3A;
+                match format {
+                    ColorFormat::TwelveBPP => out[1] = 0x03,
+                    ColorFormat::SixteenBPP => out[1] = 0x05,
+                    ColorFormat::EighteenBPP => out[1] = 0x06,
+                }
+                2
+            }
+            Command::GAMCTRP1(parameters) => {
+                out[0] = 0xE0;
+                for i in 0..16 {
+                    out[i + 1] = parameters[i] & 0x3F;
+                }
+                17
+            }
+            Command::GAMCTRN1(parameters) => {
+                out[0] = 0xE1;
+                for i in 0..16 {
+                    out[i + 1] = parameters[i] & 0x3F;
+                }
+                17
+            }
+            Command::DISPON => {
+                out[0] = 0x29;
+                1
+            }
+            Command::NORON => {
+                out[0] = 0x13;
+                1
             }
         };
         length
@@ -245,5 +287,80 @@ mod tests {
         assert_eq!(2, len);
         assert_eq!(0x36, out[0]);
         assert_eq!(0xFC, out[1]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_colmod_command() {
+        // 12 bits per pixel
+        let command = Command::COLMOD(ColorFormat::TwelveBPP);
+        let mut out: [u8; 2] = [0; 2];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        assert_eq!(0x3A, out[0]);
+        assert_eq!(0x03, out[1]);
+
+        // 16 bits per pixel
+        let command = Command::COLMOD(ColorFormat::SixteenBPP);
+        let mut out: [u8; 2] = [0; 2];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        assert_eq!(0x3A, out[0]);
+        assert_eq!(0x05, out[1]);
+
+        // 18 bits per pixel
+        let command = Command::COLMOD(ColorFormat::EighteenBPP);
+        let mut out: [u8; 2] = [0; 2];
+        let len = command.encode(&mut out);
+        assert_eq!(2, len);
+        assert_eq!(0x3A, out[0]);
+        assert_eq!(0x06, out[1]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_gamctrp1_command() {
+        let command = Command::GAMCTRP1([
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF,
+        ]);
+        let mut out: [u8; 17] = [0; 17];
+        let len = command.encode(&mut out);
+        assert_eq!(17, len);
+        assert_eq!(0xE0, out[0]);
+        for i in 1..17 {
+            assert_eq!(0x3F, out[i])
+        }
+    }
+
+    #[test]
+    fn should_provide_encoding_for_gamctrn1_command() {
+        let command = Command::GAMCTRN1([
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF,
+        ]);
+        let mut out: [u8; 17] = [0; 17];
+        let len = command.encode(&mut out);
+        assert_eq!(17, len);
+        assert_eq!(0xE1, out[0]);
+        for i in 1..17 {
+            assert_eq!(0x3F, out[i])
+        }
+    }
+
+    #[test]
+    fn should_provide_encoding_for_dispon_command() {
+        let command = Command::DISPON;
+        let mut out: [u8; 1] = [0; 1];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        assert_eq!(0x29, out[0]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_noron_command() {
+        let command = Command::NORON;
+        let mut out: [u8; 1] = [0; 1];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        assert_eq!(0x13, out[0]);
     }
 }
