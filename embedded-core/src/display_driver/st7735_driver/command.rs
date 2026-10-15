@@ -25,6 +25,9 @@ pub enum Command {
     GAMCTRN1([u8; 16]),
     DISPON,
     NORON,
+    CASET([u16; 2]),
+    RASET([u16; 2]),
+    RAMWR,
 }
 
 impl Encode for Command {
@@ -136,6 +139,30 @@ impl Encode for Command {
             }
             Command::NORON => {
                 out[0] = 0x13;
+                1
+            }
+            Command::CASET(parameters) => {
+                out[0] = 0x2A;
+                let x_low = parameters[0];
+                let x_high = parameters[1];
+                out[1] = (x_low >> 8) as u8;
+                out[2] = (x_low & 0xFF) as u8;
+                out[3] = (x_high >> 8) as u8;
+                out[4] = (x_high & 0xFF) as u8;
+                5
+            }
+            Command::RASET(parameters) => {
+                out[0] = 0x2B;
+                let x_low = parameters[0];
+                let x_high = parameters[1];
+                out[1] = (x_low >> 8) as u8;
+                out[2] = (x_low & 0xFF) as u8;
+                out[3] = (x_high >> 8) as u8;
+                out[4] = (x_high & 0xFF) as u8;
+                5
+            }
+            Command::RAMWR => {
+                out[0] = 0x2C;
                 1
             }
         };
@@ -362,5 +389,40 @@ mod tests {
         let len = command.encode(&mut out);
         assert_eq!(1, len);
         assert_eq!(0x13, out[0]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_caset_command() {
+        let command = Command::CASET([0xAA55, 0x55AA]);
+        let mut out: [u8; 5] = [0; 5];
+        let len = command.encode(&mut out);
+        assert_eq!(5, len);
+        assert_eq!(0x2A, out[0]);
+        assert_eq!(0xAA, out[1]);
+        assert_eq!(0x55, out[2]);
+        assert_eq!(0x55, out[3]);
+        assert_eq!(0xAA, out[4]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_raset_command() {
+        let command = Command::RASET([0xAA55, 0x55AA]);
+        let mut out: [u8; 5] = [0; 5];
+        let len = command.encode(&mut out);
+        assert_eq!(5, len);
+        assert_eq!(0x2B, out[0]);
+        assert_eq!(0xAA, out[1]);
+        assert_eq!(0x55, out[2]);
+        assert_eq!(0x55, out[3]);
+        assert_eq!(0xAA, out[4]);
+    }
+
+    #[test]
+    fn should_provide_encoding_for_ramwr_command() {
+        let command = Command::RAMWR;
+        let mut out: [u8; 1] = [0; 1];
+        let len = command.encode(&mut out);
+        assert_eq!(1, len);
+        assert_eq!(0x2C, out[0]);
     }
 }
