@@ -20,7 +20,7 @@ impl PixelLayout for Ssd1306PixelLayout {
 }
 
 #[cfg(test)]
-mod ssd1306_tests {
+mod tests {
     use super::*;
 
     #[test]
