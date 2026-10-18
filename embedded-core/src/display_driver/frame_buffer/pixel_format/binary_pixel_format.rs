@@ -24,7 +24,7 @@ impl PixelFormat for BinaryPixelFormat {
 }
 
 #[cfg(test)]
-mod binary_pixel_format_test {
+mod tests {
     use super::*;
 
     #[test]
