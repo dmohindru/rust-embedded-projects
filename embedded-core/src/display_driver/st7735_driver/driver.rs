@@ -1,7 +1,14 @@
 use crate::display_driver::frame_buffer::{FrameBuffer, Rgb565PixelFormat, Rgb565PixelLayout};
 use crate::display_driver::st7735_driver::command::{ColorFormat, Command};
+use embedded_graphics::pixelcolor::Rgb565;
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::spi::SpiDevice;
+
+pub enum St7735Error<SpiError, DcError, RstError> {
+    Spi(SpiError),
+    Dc(DcError),
+    Reset(RstError),
+}
 
 pub type St7735Rgb565FrameBuffer<const WIDTH: usize, const HEIGHT: usize, const BYTES: usize> =
     FrameBuffer<WIDTH, HEIGHT, BYTES, Rgb565PixelLayout, Rgb565PixelFormat>;
@@ -35,14 +42,18 @@ where
         }
     }
 
-    pub async fn initialize(&mut self) -> Result<(), SPI::Error> {
+    pub async fn initialize(
+        &mut self,
+    ) -> Result<(), St7735Error<SPI::Error, DC::Error, RST::Error>> {
         todo!()
     }
 
-    pub async fn flush(&mut self) -> Result<(), SPI::Error> {
+    pub async fn flush(&mut self) -> Result<(), St7735Error<SPI::Error, DC::Error, RST::Error>> {
         todo!()
     }
 
-    // TODO research about supplying pixel color to this method
-    pub async fn set_pixel_color(&mut self, x: usize, y: usize) {}
+    /// This method is intended to be used from embedded graphics DrawTarget trait
+    pub async fn set_pixel_color(&mut self, x: usize, y: usize, color: Rgb565) {
+        todo!()
+    }
 }
