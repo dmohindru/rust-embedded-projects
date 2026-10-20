@@ -2,13 +2,14 @@ mod binary_pixel_format;
 mod rgb565_pixel_format;
 
 pub use binary_pixel_format::BinaryPixelFormat;
+use embedded_graphics::pixelcolor::PixelColor;
 pub use rgb565_pixel_format::Rgb565PixelFormat;
 
 pub trait PixelFormat {
     /// Number of significant bits returned by `encode()`.
     const BITS_PER_PIXEL: usize;
 
-    type Color;
+    type Color: PixelColor;
 
     /// Encodes a color into an integer.
     ///
