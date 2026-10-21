@@ -1,7 +1,7 @@
 use crate::display_driver::frame_buffer::{
     FrameBuffer, FrameBufferInterface, Rgb565PixelFormat, Rgb565PixelLayout,
 };
-use crate::display_driver::st7735_driver::command::Command;
+use crate::display_driver::st7735_driver::command::{ColorFormat, Command};
 use crate::display_driver::Encode;
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::delay::DelayNs;
@@ -51,8 +51,40 @@ where
         }
     }
 
-    pub async fn initialize(&mut self) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
-        todo!()
+    pub async fn initialize(
+        &mut self,
+        color_format: ColorFormat,
+    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
+        self.rst.set_high().map_err(|e| Error::Reset(e))?;
+        self.write(Command::SWRESET).await?;
+        self.write(Command::SLPOUT).await?;
+        self.write(Command::FRMCTR1([0x01, 0x2C, 0x2D])).await?;
+        self.write(Command::FRMCTR2([0x01, 0x2C, 0x2D])).await?;
+        self.write(Command::FRMCTR3([0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D]))
+            .await?;
+        self.write(Command::INVCTR(0x07)).await?;
+        self.write(Command::PWCTR1([0xA2, 0x02, 0x84])).await?;
+        self.write(Command::PWCTR2(0xC5)).await?;
+        self.write(Command::PWCTR3([0x0A, 0x00])).await?;
+        self.write(Command::PWCTR4([0x8A, 0x2A])).await?;
+        self.write(Command::PWCTR5([0x8A, 0xEE])).await?;
+        self.write(Command::VMCTR1(0x0E)).await?;
+        self.write(Command::MADCTL(0x00)).await?;
+        self.write(Command::COLMOD(color_format)).await?;
+        self.write(Command::GAMCTRP1([
+            0x12, 0x1C, 0x10, 0x18, 0x33, 0x2C, 0x25, 0x28, 0x28, 0x27, 0x2F, 0x3C, 0x00, 0x03,
+            0x03, 0x10,
+        ]))
+        .await?;
+        self.write(Command::GAMCTRN1([
+            0x12, 0x1C, 0x10, 0x18, 0x2D, 0x28, 0x23, 0x28, 0x28, 0x26, 0x2F, 0x3B, 0x00, 0x03,
+            0x03, 0x10,
+        ]))
+        .await?;
+        self.write(Command::DISPON).await?;
+        self.write(Command::NORON).await?;
+
+        Ok(())
     }
 
     pub async fn flush(&mut self) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
