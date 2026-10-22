@@ -7,6 +7,7 @@ use embedded_hal::digital::OutputPin;
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::spi::SpiDevice;
 
+#[derive(Debug)]
 pub enum Error<SpiError, DcError, RstError> {
     Spi(SpiError),
     Dc(DcError),
@@ -59,30 +60,30 @@ where
         self.write(Command::SWRESET).await?;
         self.write(Command::SLPOUT).await?;
         self.write(Command::FRMCTR1([0x01, 0x2C, 0x2D])).await?;
-        self.write(Command::FRMCTR2([0x01, 0x2C, 0x2D])).await?;
-        self.write(Command::FRMCTR3([0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D]))
-            .await?;
-        self.write(Command::INVCTR(0x07)).await?;
-        self.write(Command::PWCTR1([0xA2, 0x02, 0x84])).await?;
-        self.write(Command::PWCTR2(0xC5)).await?;
-        self.write(Command::PWCTR3([0x0A, 0x00])).await?;
-        self.write(Command::PWCTR4([0x8A, 0x2A])).await?;
-        self.write(Command::PWCTR5([0x8A, 0xEE])).await?;
-        self.write(Command::VMCTR1(0x0E)).await?;
-        self.write(Command::MADCTL(0x00)).await?;
-        self.write(Command::COLMOD(color_format)).await?;
-        self.write(Command::GAMCTRP1([
-            0x12, 0x1C, 0x10, 0x18, 0x33, 0x2C, 0x25, 0x28, 0x28, 0x27, 0x2F, 0x3C, 0x00, 0x03,
-            0x03, 0x10,
-        ]))
-        .await?;
-        self.write(Command::GAMCTRN1([
-            0x12, 0x1C, 0x10, 0x18, 0x2D, 0x28, 0x23, 0x28, 0x28, 0x26, 0x2F, 0x3B, 0x00, 0x03,
-            0x03, 0x10,
-        ]))
-        .await?;
-        self.write(Command::DISPON).await?;
-        self.write(Command::NORON).await?;
+        // self.write(Command::FRMCTR2([0x01, 0x2C, 0x2D])).await?;
+        // self.write(Command::FRMCTR3([0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D]))
+        //     .await?;
+        // self.write(Command::INVCTR(0x07)).await?;
+        // self.write(Command::PWCTR1([0xA2, 0x02, 0x84])).await?;
+        // self.write(Command::PWCTR2(0xC5)).await?;
+        // self.write(Command::PWCTR3([0x0A, 0x00])).await?;
+        // self.write(Command::PWCTR4([0x8A, 0x2A])).await?;
+        // self.write(Command::PWCTR5([0x8A, 0xEE])).await?;
+        // self.write(Command::VMCTR1(0x0E)).await?;
+        // self.write(Command::MADCTL(0x00)).await?;
+        // self.write(Command::COLMOD(color_format)).await?;
+        // self.write(Command::GAMCTRP1([
+        //     0x12, 0x1C, 0x10, 0x18, 0x33, 0x2C, 0x25, 0x28, 0x28, 0x27, 0x2F, 0x3C, 0x00, 0x03,
+        //     0x03, 0x10,
+        // ]))
+        // .await?;
+        // self.write(Command::GAMCTRN1([
+        //     0x12, 0x1C, 0x10, 0x18, 0x2D, 0x28, 0x23, 0x28, 0x28, 0x26, 0x2F, 0x3B, 0x00, 0x03,
+        //     0x03, 0x10,
+        // ]))
+        // .await?;
+        // self.write(Command::DISPON).await?;
+        // self.write(Command::NORON).await?;
 
         Ok(())
     }
@@ -106,9 +107,9 @@ where
         let pos: usize = command.encode(&mut buffer);
         if pos > 1 {
             self.write_command(buffer[0]).await?;
+            self.write_command_args(&buffer[1..pos]).await?;
         } else {
             self.write_command(buffer[0]).await?;
-            self.write_command_args(&buffer[1..pos]).await?;
         }
         Ok(())
     }
@@ -143,6 +144,21 @@ where
 }
 
 #[cfg(test)]
+impl<SPI, DC, RST, FB, D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize>
+    St7735<SPI, DC, RST, FB, D, WIDTH, HEIGHT, BYTES>
+where
+    SPI: SpiDevice,
+    DC: OutputPin,
+    RST: OutputPin,
+    FB: FrameBufferInterface,
+    D: DelayNs,
+{
+    pub fn free(self) -> Self {
+        self
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::mocks::FakeDelay;
@@ -156,6 +172,62 @@ mod tests {
     const HEIGHT: usize = 132;
     const BYTES: usize = 42768; // 162 X 132 X 2 = 42768
     type RGB565FrameBuffer = St7735Rgb565FrameBuffer<WIDTH, HEIGHT, BYTES>;
+
+    #[tokio::test]
+    async fn should_initialize_st7735_with_proper_command_and_pin_transactions() {
+        let rst_pin_transactions = [PinTransaction::set(PinState::High)];
+        let dc_pin_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let initialization_command_bytes = expected_initialization_command_bytes();
+        let spi_transactions: Vec<SpiTransaction<u8>> = initialization_command_bytes
+            .iter()
+            .map(|transaction_bytes| {
+                vec![
+                    SpiTransaction::transaction_start(),
+                    SpiTransaction::write_vec(transaction_bytes.to_vec()),
+                    SpiTransaction::transaction_end(),
+                ]
+            })
+            .flat_map(|f| f)
+            .collect();
+        let mut st7735_device = get_st7735_device(
+            &rst_pin_transactions,
+            &dc_pin_transactions,
+            spi_transactions,
+        );
+
+        st7735_device
+            .initialize(ColorFormat::SixteenBPP)
+            .await
+            .unwrap();
+        let mut st7735_device = st7735_device.free();
+
+        println!("---- asserting spi device transactions ----");
+        st7735_device.device.done();
+        println!("---- asserting dc pin transactions ----");
+        st7735_device.dc.done();
+        println!("---- asserting rst pin transactions ----");
+        st7735_device.rst.done();
+    }
+
+    fn encode_command(command: Command) -> Vec<u8> {
+        let mut buffer = [0u8; 17];
+        let len = command.encode(&mut buffer);
+        buffer[..len].to_vec()
+    }
+
+    fn expected_initialization_command_bytes() -> Vec<Vec<u8>> {
+        let mut bytes = Vec::new();
+        bytes.push(encode_command(Command::SWRESET));
+        bytes.push(encode_command(Command::SLPOUT));
+        bytes.push(encode_command(Command::FRMCTR1([0x01, 0x2C, 0x2D])));
+
+        bytes
+    }
 
     fn get_st7735_device(
         rst_pin_transactions: &[PinTransaction],
