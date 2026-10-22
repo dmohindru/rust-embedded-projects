@@ -141,3 +141,34 @@ where
         self.frame_buffer.set_pixel(x, y, color);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mocks::FakeDelay;
+
+    use embedded_hal_mock::eh1::digital::{
+        Mock as PinMock, State as PinState, Transaction as PinTransaction,
+    };
+
+    use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
+    const WIDTH: usize = 162;
+    const HEIGHT: usize = 132;
+    const BYTES: usize = 42768; // 162 X 132 X 2 = 42768
+    type RGB565FrameBuffer = St7735Rgb565FrameBuffer<WIDTH, HEIGHT, BYTES>;
+
+    fn get_st7735_device(
+        rst_pin_transactions: &[PinTransaction],
+        dc_pin_transactions: &[PinTransaction],
+        spi_transactions: Vec<SpiTransaction<u8>>,
+    ) -> St7735<SpiMock<u8>, PinMock, PinMock, RGB565FrameBuffer, FakeDelay, WIDTH, HEIGHT, BYTES>
+    {
+        let rst_pin = PinMock::new(rst_pin_transactions);
+        let dc_pin = PinMock::new(dc_pin_transactions);
+        let spi_device = SpiMock::new(&spi_transactions);
+        let fake_delay = FakeDelay::new();
+        let frame_buffer = RGB565FrameBuffer::new();
+        let st7735_device = St7735::new(spi_device, dc_pin, rst_pin, frame_buffer, fake_delay);
+        st7735_device
+    }
+}
