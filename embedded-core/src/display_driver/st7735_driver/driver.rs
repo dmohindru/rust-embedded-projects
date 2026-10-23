@@ -60,30 +60,30 @@ where
         self.write(Command::SWRESET).await?;
         self.write(Command::SLPOUT).await?;
         self.write(Command::FRMCTR1([0x01, 0x2C, 0x2D])).await?;
-        // self.write(Command::FRMCTR2([0x01, 0x2C, 0x2D])).await?;
-        // self.write(Command::FRMCTR3([0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D]))
-        //     .await?;
-        // self.write(Command::INVCTR(0x07)).await?;
-        // self.write(Command::PWCTR1([0xA2, 0x02, 0x84])).await?;
-        // self.write(Command::PWCTR2(0xC5)).await?;
-        // self.write(Command::PWCTR3([0x0A, 0x00])).await?;
-        // self.write(Command::PWCTR4([0x8A, 0x2A])).await?;
-        // self.write(Command::PWCTR5([0x8A, 0xEE])).await?;
-        // self.write(Command::VMCTR1(0x0E)).await?;
-        // self.write(Command::MADCTL(0x00)).await?;
-        // self.write(Command::COLMOD(color_format)).await?;
-        // self.write(Command::GAMCTRP1([
-        //     0x12, 0x1C, 0x10, 0x18, 0x33, 0x2C, 0x25, 0x28, 0x28, 0x27, 0x2F, 0x3C, 0x00, 0x03,
-        //     0x03, 0x10,
-        // ]))
-        // .await?;
-        // self.write(Command::GAMCTRN1([
-        //     0x12, 0x1C, 0x10, 0x18, 0x2D, 0x28, 0x23, 0x28, 0x28, 0x26, 0x2F, 0x3B, 0x00, 0x03,
-        //     0x03, 0x10,
-        // ]))
-        // .await?;
-        // self.write(Command::DISPON).await?;
-        // self.write(Command::NORON).await?;
+        self.write(Command::FRMCTR2([0x01, 0x2C, 0x2D])).await?;
+        self.write(Command::FRMCTR3([0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D]))
+            .await?;
+        self.write(Command::INVCTR(0x07)).await?;
+        self.write(Command::PWCTR1([0xA2, 0x02, 0x84])).await?;
+        self.write(Command::PWCTR2(0xC5)).await?;
+        self.write(Command::PWCTR3([0x0A, 0x00])).await?;
+        self.write(Command::PWCTR4([0x8A, 0x2A])).await?;
+        self.write(Command::PWCTR5([0x8A, 0xEE])).await?;
+        self.write(Command::VMCTR1(0x0E)).await?;
+        self.write(Command::MADCTL(0x00)).await?;
+        self.write(Command::COLMOD(color_format)).await?;
+        self.write(Command::GAMCTRP1([
+            0x12, 0x1C, 0x10, 0x18, 0x33, 0x2C, 0x25, 0x28, 0x28, 0x27, 0x2F, 0x3C, 0x00, 0x03,
+            0x03, 0x10,
+        ]))
+        .await?;
+        self.write(Command::GAMCTRN1([
+            0x12, 0x1C, 0x10, 0x18, 0x2D, 0x28, 0x23, 0x28, 0x28, 0x26, 0x2F, 0x3B, 0x00, 0x03,
+            0x03, 0x10,
+        ]))
+        .await?;
+        self.write(Command::DISPON).await?;
+        self.write(Command::NORON).await?;
 
         Ok(())
     }
@@ -177,23 +177,59 @@ mod tests {
     async fn should_initialize_st7735_with_proper_command_and_pin_transactions() {
         let rst_pin_transactions = [PinTransaction::set(PinState::High)];
         let dc_pin_transactions = [
+            // SWRESET
             PinTransaction::set(PinState::Low),
+            // SLPOUT
             PinTransaction::set(PinState::Low),
+            // FRMCTR1
             PinTransaction::set(PinState::Low),
             PinTransaction::set(PinState::High),
+            // FRMCTR2
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // FRMCTR3
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // INVCTR
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // PWCTR1
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // PWCTR2
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // PWCTR3
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // PWCTR4
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // PWCTR5
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // VMCTR1
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // MADCTL
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // COLMOD
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // GAMCTRP1
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // GAMCTRN1
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // DISPON
+            PinTransaction::set(PinState::Low),
+            // NORON
+            PinTransaction::set(PinState::Low),
         ];
-        let initialization_command_bytes = expected_initialization_command_bytes();
-        let spi_transactions: Vec<SpiTransaction<u8>> = initialization_command_bytes
-            .iter()
-            .map(|transaction_bytes| {
-                vec![
-                    SpiTransaction::transaction_start(),
-                    SpiTransaction::write_vec(transaction_bytes.to_vec()),
-                    SpiTransaction::transaction_end(),
-                ]
-            })
-            .flat_map(|f| f)
-            .collect();
+
+        let spi_transactions = expected_initialization_command_spi_transactions();
         let mut st7735_device = get_st7735_device(
             &rst_pin_transactions,
             &dc_pin_transactions,
@@ -206,11 +242,8 @@ mod tests {
             .unwrap();
         let mut st7735_device = st7735_device.free();
 
-        println!("---- asserting spi device transactions ----");
         st7735_device.device.done();
-        println!("---- asserting dc pin transactions ----");
         st7735_device.dc.done();
-        println!("---- asserting rst pin transactions ----");
         st7735_device.rst.done();
     }
 
@@ -220,13 +253,68 @@ mod tests {
         buffer[..len].to_vec()
     }
 
-    fn expected_initialization_command_bytes() -> Vec<Vec<u8>> {
-        let mut bytes = Vec::new();
-        bytes.push(encode_command(Command::SWRESET));
-        bytes.push(encode_command(Command::SLPOUT));
-        bytes.push(encode_command(Command::FRMCTR1([0x01, 0x2C, 0x2D])));
+    fn expected_initialization_command_spi_transactions() -> Vec<SpiTransaction<u8>> {
+        let mut transactions = Vec::new();
+        concat_spi_transactions(&mut transactions, Command::SWRESET);
+        concat_spi_transactions(&mut transactions, Command::SLPOUT);
+        concat_spi_transactions(&mut transactions, Command::FRMCTR1([0x01, 0x2C, 0x2D]));
+        concat_spi_transactions(&mut transactions, Command::FRMCTR2([0x01, 0x2C, 0x2D]));
+        concat_spi_transactions(
+            &mut transactions,
+            Command::FRMCTR3([0x01, 0x2C, 0x2D, 0x01, 0x2C, 0x2D]),
+        );
+        concat_spi_transactions(&mut transactions, Command::INVCTR(0x07));
+        concat_spi_transactions(&mut transactions, Command::PWCTR1([0xA2, 0x02, 0x84]));
+        concat_spi_transactions(&mut transactions, Command::PWCTR2(0xC5));
+        concat_spi_transactions(&mut transactions, Command::PWCTR3([0x0A, 0x00]));
+        concat_spi_transactions(&mut transactions, Command::PWCTR4([0x8A, 0x2A]));
+        concat_spi_transactions(&mut transactions, Command::PWCTR5([0x8A, 0xEE]));
+        concat_spi_transactions(&mut transactions, Command::VMCTR1(0x0E));
+        concat_spi_transactions(&mut transactions, Command::MADCTL(0x00));
+        concat_spi_transactions(&mut transactions, Command::COLMOD(ColorFormat::SixteenBPP));
+        concat_spi_transactions(
+            &mut transactions,
+            Command::GAMCTRP1([
+                0x12, 0x1C, 0x10, 0x18, 0x33, 0x2C, 0x25, 0x28, 0x28, 0x27, 0x2F, 0x3C, 0x00, 0x03,
+                0x03, 0x10,
+            ]),
+        );
+        concat_spi_transactions(
+            &mut transactions,
+            Command::GAMCTRN1([
+                0x12, 0x1C, 0x10, 0x18, 0x2D, 0x28, 0x23, 0x28, 0x28, 0x26, 0x2F, 0x3B, 0x00, 0x03,
+                0x03, 0x10,
+            ]),
+        );
+        concat_spi_transactions(&mut transactions, Command::DISPON);
+        concat_spi_transactions(&mut transactions, Command::NORON);
 
-        bytes
+        transactions
+    }
+
+    fn concat_spi_transactions(transactions: &mut Vec<SpiTransaction<u8>>, command: Command) {
+        let bytes = encode_command(command);
+        if bytes.len() > 1 {
+            let command_transaction = vec![
+                SpiTransaction::transaction_start(),
+                SpiTransaction::write_vec(vec![bytes[0]]),
+                SpiTransaction::transaction_end(),
+            ];
+            transactions.extend(command_transaction);
+            let command_args_transactions = vec![
+                SpiTransaction::transaction_start(),
+                SpiTransaction::write_vec(bytes[1..].to_vec()),
+                SpiTransaction::transaction_end(),
+            ];
+            transactions.extend(command_args_transactions);
+        } else {
+            let command_transaction = vec![
+                SpiTransaction::transaction_start(),
+                SpiTransaction::write_vec(vec![bytes[0]]),
+                SpiTransaction::transaction_end(),
+            ];
+            transactions.extend(command_transaction);
+        }
     }
 
     fn get_st7735_device(
