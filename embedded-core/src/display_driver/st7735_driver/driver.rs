@@ -89,7 +89,16 @@ where
     }
 
     pub async fn flush(&mut self) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
-        todo!()
+        self.write(Command::CASET([0, WIDTH as u16])).await?;
+        self.write(Command::RASET([0, HEIGHT as u16])).await?;
+        self.write(Command::RAMWR).await?;
+        self.dc.set_high().map_err(|e| Error::Dc(e))?;
+        let frame_data = self.frame_buffer.frame_data();
+        self.device
+            .write(frame_data)
+            .await
+            .map_err(|e| Error::Spi(e))?;
+        Ok(())
     }
 
     pub async fn reset(&mut self) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
@@ -107,7 +116,7 @@ where
         let pos: usize = command.encode(&mut buffer);
         if pos > 1 {
             self.write_command(buffer[0]).await?;
-            self.write_command_args(&buffer[1..pos]).await?;
+            self.write_data(&buffer[1..pos]).await?;
         } else {
             self.write_command(buffer[0]).await?;
         }
@@ -127,7 +136,7 @@ where
         Ok(())
     }
 
-    async fn write_command_args(
+    async fn write_data(
         &mut self,
         args: &[u8],
     ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
@@ -163,6 +172,7 @@ mod tests {
     use super::*;
     use crate::mocks::FakeDelay;
 
+    use embedded_hal_mock::eh1::digital::State::High;
     use embedded_hal_mock::eh1::digital::{
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
@@ -230,10 +240,12 @@ mod tests {
         ];
 
         let spi_transactions = expected_initialization_command_spi_transactions();
+        let frame_buffer = RGB565FrameBuffer::new();
         let mut st7735_device = get_st7735_device(
             &rst_pin_transactions,
             &dc_pin_transactions,
             spi_transactions,
+            frame_buffer,
         );
 
         st7735_device
@@ -245,6 +257,63 @@ mod tests {
         st7735_device.device.done();
         st7735_device.dc.done();
         st7735_device.rst.done();
+    }
+
+    #[tokio::test]
+    async fn should_reset_display_with_proper_pin_transaction() {
+        let rst_pin_transactions = [
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(High),
+        ];
+        let dc_pin_transactions: [PinTransaction; 0] = [];
+        let spi_transactions: Vec<SpiTransaction<u8>> = Vec::new();
+        let frame_buffer = RGB565FrameBuffer::new();
+        let mut st7735_device = get_st7735_device(
+            &rst_pin_transactions,
+            &dc_pin_transactions,
+            spi_transactions,
+            frame_buffer,
+        );
+        st7735_device.reset().await.unwrap();
+        let mut st7735_device = st7735_device.free();
+        st7735_device.rst.done();
+        st7735_device.dc.done();
+        st7735_device.device.done();
+    }
+
+    #[tokio::test]
+    async fn should_flush_frame_data_with_proper_commands_and_pin_transactions() {
+        let rst_pin_transactions: [PinTransaction; 0] = [];
+        let dc_pin_transactions = [
+            // CASET
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // RASET
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // RAMWR
+            PinTransaction::set(PinState::Low),
+            // Frame buffer data
+            PinTransaction::set(PinState::High),
+        ];
+        let frame_buffer = RGB565FrameBuffer::new();
+        let mut spi_transactions = Vec::new();
+        concat_spi_transactions(&mut spi_transactions, Command::CASET([0, WIDTH as u16]));
+        concat_spi_transactions(&mut spi_transactions, Command::RASET([0, HEIGHT as u16]));
+        concat_spi_transactions(&mut spi_transactions, Command::RAMWR);
+
+        let frame_buffer_data_transactions = vec![
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write_vec(frame_buffer.frame_data().to_vec()),
+            SpiTransaction::transaction_end(),
+        ];
+        spi_transactions.extend(frame_buffer_data_transactions);
+        let st7735_device = get_st7735_device(
+            &rst_pin_transactions,
+            &dc_pin_transactions,
+            spi_transactions,
+            frame_buffer,
+        );
     }
 
     fn encode_command(command: Command) -> Vec<u8> {
@@ -321,13 +390,13 @@ mod tests {
         rst_pin_transactions: &[PinTransaction],
         dc_pin_transactions: &[PinTransaction],
         spi_transactions: Vec<SpiTransaction<u8>>,
+        frame_buffer: RGB565FrameBuffer,
     ) -> St7735<SpiMock<u8>, PinMock, PinMock, RGB565FrameBuffer, FakeDelay, WIDTH, HEIGHT, BYTES>
     {
         let rst_pin = PinMock::new(rst_pin_transactions);
         let dc_pin = PinMock::new(dc_pin_transactions);
         let spi_device = SpiMock::new(&spi_transactions);
         let fake_delay = FakeDelay::new();
-        let frame_buffer = RGB565FrameBuffer::new();
         let st7735_device = St7735::new(spi_device, dc_pin, rst_pin, frame_buffer, fake_delay);
         st7735_device
     }
