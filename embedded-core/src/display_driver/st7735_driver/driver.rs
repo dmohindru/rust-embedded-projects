@@ -308,12 +308,17 @@ mod tests {
             SpiTransaction::transaction_end(),
         ];
         spi_transactions.extend(frame_buffer_data_transactions);
-        let st7735_device = get_st7735_device(
+        let mut st7735_device = get_st7735_device(
             &rst_pin_transactions,
             &dc_pin_transactions,
             spi_transactions,
             frame_buffer,
         );
+        st7735_device.flush().await.unwrap();
+        let mut st7735_device = st7735_device.free();
+        st7735_device.dc.done();
+        st7735_device.rst.done();
+        st7735_device.device.done();
     }
 
     fn encode_command(command: Command) -> Vec<u8> {
