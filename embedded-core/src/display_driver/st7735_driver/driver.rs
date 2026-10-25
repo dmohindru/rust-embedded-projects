@@ -17,7 +17,6 @@ pub enum Error<SpiError, DcError, RstError> {
 pub type St7735Rgb565FrameBuffer<const WIDTH: usize, const HEIGHT: usize, const BYTES: usize> =
     FrameBuffer<WIDTH, HEIGHT, BYTES, Rgb565PixelLayout, Rgb565PixelFormat>;
 
-// TODO: make it generic over frame buffer type
 pub struct St7735<SPI, DC, RST, FB, D, const WIDTH: usize, const HEIGHT: usize, const BYTES: usize>
 where
     SPI: SpiDevice,
