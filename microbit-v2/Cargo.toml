@@ -4,6 +4,7 @@ members = [
     "projects/led_matrix_projects/*",
     "projects/project01_hc165_game_shield",
     "projects/project02_make_code_input_demo",
+    "projects/project03_make_code_display_demo",
 ]
 resolver = "2"
 
@@ -40,5 +41,7 @@ embassy-embedded-hal = "0.5.0"
 static_cell = "2.1.1"
 heapless = "0.8"
 panic-probe = { version = "0.3.2", features = ["print-defmt"] }
+embedded-hal = "0.2.7"
+
 [profile.release]
 debug = 2
