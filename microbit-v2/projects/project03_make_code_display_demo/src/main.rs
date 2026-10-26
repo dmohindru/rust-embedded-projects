@@ -2,6 +2,7 @@
 #![no_main]
 
 use defmt::info;
+use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
 use embassy_nrf::{
     bind_interrupts,
@@ -9,14 +10,35 @@ use embassy_nrf::{
     peripherals,
     spim::{self, Spim},
 };
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
 use embassy_time::{Delay, Timer};
 use embedded_core::display_driver::{St7735, St7735Rgb565FrameBuffer};
+// use embedded_hal::digital::ErrorType;
+// use embedded_hal::digital::OutputPin;
+use embedded_hal::digital::v2::OutputPin;
+use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
     TWISPI0 =>
         spim::InterruptHandler<peripherals::TWISPI0>;
 });
+
+// This is valid ONLY if the hardware holds display CS low.
+struct StaticCs;
+impl OutputPin for StaticCs {
+    type Error = core::convert::Infallible;
+    fn set_low(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    fn set_high(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+}
+
+type SpiBus = Mutex<NoopRawMutex, Spim<'static, peripherals::TWISPI0>>;
+static SPI_BUS: StaticCell<SpiBus> = StaticCell::new();
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
@@ -40,5 +62,11 @@ async fn main(_spawner: Spawner) {
     let mut rst = Output::new(p.P1_02, Level::High, OutputDrive::Standard);
     let mut dc = Output::new(p.P0_10, Level::Low, OutputDrive::Standard);
 
-    // let mut st7735_device = St7735::new(spi, dc, rst, frame_buffer, Delay);
+    // Put the raw SPI bus behind the async mutex.
+    let spi_bus = SPI_BUS.init(Mutex::new(spi));
+
+    // Wrap the bus as an embedded-hal-async SpiDevice.
+    let spi_device = SpiDevice::new(spi_bus, StaticCs);
+
+    let mut st7735_device = St7735::new(spi_device, dc, rst, frame_buffer, Delay);
 }
