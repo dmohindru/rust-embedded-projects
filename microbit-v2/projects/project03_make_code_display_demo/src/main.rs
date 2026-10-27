@@ -27,17 +27,20 @@ bind_interrupts!(struct Irqs {
 type MySpi = Spim<'static, peripherals::TWISPI0>;
 type SpiBus = Mutex<NoopRawMutex, MySpi>;
 static SPI_BUS: StaticCell<SpiBus> = StaticCell::new();
+const WIDTH: usize = 162;
+const HEIGHT: usize = 132;
+const BYTES: usize = 42768;
 
 type St7735SpiDevice = SpiDevice<'static, NoopRawMutex, MySpi, NoopOutputPin>;
 type St7735Driver = St7735<
     St7735SpiDevice,
     Output<'static>,
     Output<'static>,
-    St7735Rgb565FrameBuffer<162, 132, 42768>,
+    St7735Rgb565FrameBuffer<WIDTH, HEIGHT, BYTES>,
     Delay,
-    162,
-    132,
-    42768,
+    WIDTH,
+    HEIGHT,
+    BYTES,
 >;
 
 #[embassy_executor::main]
@@ -58,7 +61,7 @@ async fn main(_spawner: Spawner) {
     // Width: 162
     // Height: 132
     // Bytes = 162 X 132 X 2 = 42768
-    let frame_buffer = St7735Rgb565FrameBuffer::<162, 132, 42768>::new();
+    let frame_buffer = St7735Rgb565FrameBuffer::<WIDTH, HEIGHT, BYTES>::new();
     let rst = Output::new(p.P1_02, Level::High, OutputDrive::Standard);
     let dc = Output::new(p.P0_10, Level::Low, OutputDrive::Standard);
 
@@ -78,13 +81,18 @@ async fn main(_spawner: Spawner) {
 
     // Set a few pixels
     info!("Setting pixels for testing");
-    for y in 0..132 {
-        for x in 0..162 {
-            st7735_driver.set_pixel_color(x, y, Rgb565::new(0, 0, 255));
+    for y in 0..HEIGHT {
+        for x in 0..WIDTH {
+            st7735_driver.set_pixel_color(x, y, Rgb565::new(255, 255, 0));
         }
     }
 
-    // Send the framebuffer to the display
+    st7735_driver.set_pixel_color(40, 40, Rgb565::new(255, 0, 0));
+    st7735_driver.set_pixel_color(41, 40, Rgb565::new(255, 0, 0));
+    st7735_driver.set_pixel_color(40, 41, Rgb565::new(255, 0, 0));
+    st7735_driver.set_pixel_color(41, 41, Rgb565::new(255, 0, 0));
+
+    // // Send the framebuffer to the display
     st7735_driver.flush().await.unwrap();
     info!("Red frame buffer flushed");
 }
