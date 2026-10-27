@@ -11,10 +11,11 @@ use embassy_nrf::{
     spim::{self, Spim},
 };
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
-use embassy_time::{Delay, Timer};
-use embedded_core::display_driver::{St7735, St7735Rgb565FrameBuffer};
+use embassy_time::Delay;
+use embedded_core::display_driver::{ColorFormat, St7735, St7735Rgb565FrameBuffer};
+use embedded_graphics::pixelcolor::Rgb565;
+
 use embedded_core::output::NoopOutputPin;
-use embedded_hal::digital::v2::OutputPin;
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -22,19 +23,6 @@ bind_interrupts!(struct Irqs {
     TWISPI0 =>
         spim::InterruptHandler<peripherals::TWISPI0>;
 });
-
-// This is valid ONLY if the hardware holds display CS low.
-struct StaticCs;
-impl OutputPin for StaticCs {
-    type Error = core::convert::Infallible;
-    fn set_low(&mut self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-
-    fn set_high(&mut self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-}
 
 type MySpi = Spim<'static, peripherals::TWISPI0>;
 type SpiBus = Mutex<NoopRawMutex, MySpi>;
@@ -66,14 +54,13 @@ async fn main(_spawner: Spawner) {
     // LCD_DC: P8 - P0.10
     // LCDRST: P16 - P1.02
 
-    let mut spi = Spim::new_txonly(p.TWISPI0, Irqs, p.P0_17, p.P0_13, config);
+    let spi = Spim::new_txonly(p.TWISPI0, Irqs, p.P0_17, p.P0_13, config);
     // Width: 162
     // Height: 132
     // Bytes = 162 X 132 X 2 = 42768
     let frame_buffer = St7735Rgb565FrameBuffer::<162, 132, 42768>::new();
-    let mut rst = Output::new(p.P1_02, Level::High, OutputDrive::Standard);
-    let mut dc = Output::new(p.P0_10, Level::Low, OutputDrive::Standard);
-    // let mut cs = Output::new(p.P0_11, Level::Low, OutputDrive::Standard);
+    let rst = Output::new(p.P1_02, Level::High, OutputDrive::Standard);
+    let dc = Output::new(p.P0_10, Level::Low, OutputDrive::Standard);
 
     // Put the raw SPI bus behind the async mutex.
     let spi_bus = SPI_BUS.init(Mutex::new(spi));
@@ -81,5 +68,23 @@ async fn main(_spawner: Spawner) {
     // Wrap the bus as an embedded-hal-async SpiDevice.
     let spi_device = SpiDevice::new(spi_bus, NoopOutputPin);
 
-    let st7735_driver: St7735Driver = St7735::new(spi_device, dc, rst, frame_buffer, Delay);
+    let mut st7735_driver: St7735Driver = St7735::new(spi_device, dc, rst, frame_buffer, Delay);
+    info!("About to send Initialization commands");
+    st7735_driver
+        .initialize(ColorFormat::SixteenBPP)
+        .await
+        .unwrap();
+    info!("Initialization command sent");
+
+    // Set a few pixels
+    info!("Setting pixels for testing");
+    for y in 0..132 {
+        for x in 0..162 {
+            st7735_driver.set_pixel_color(x, y, Rgb565::new(0, 0, 255));
+        }
+    }
+
+    // Send the framebuffer to the display
+    st7735_driver.flush().await.unwrap();
+    info!("Red frame buffer flushed");
 }

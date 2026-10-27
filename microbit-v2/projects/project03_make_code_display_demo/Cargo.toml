@@ -21,3 +21,7 @@ cortex-m-rt = { workspace = true }
 
 panic-probe = { workspace = true }
 static_cell = { workspace = true }
+
+# Only specific to this project
+embedded-graphics = "0.8.2"
+embedded-graphics-core = "0.4.1"
