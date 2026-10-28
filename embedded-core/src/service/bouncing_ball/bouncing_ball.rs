@@ -1,11 +1,15 @@
-use core::convert::Infallible;
-
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::PixelColor};
 
 use crate::{
     display::Present,
     service::bouncing_ball::{bouncing_ball_core::BouncingBallCore, BouncingBallRenderer},
 };
+
+#[derive(Debug)]
+pub enum Error<PresentError, DrawTargetError> {
+    Present(PresentError),
+    Draw(DrawTargetError),
+}
 
 pub struct BouncingBall<D, const WIDTH: usize, const HEIGHT: usize, C: PixelColor>
 where
@@ -18,7 +22,7 @@ where
 
 impl<D, const WIDTH: usize, const HEIGHT: usize, C: PixelColor> BouncingBall<D, WIDTH, HEIGHT, C>
 where
-    D: DrawTarget<Color = C, Error = Infallible> + Present,
+    D: DrawTarget<Color = C> + Present,
 {
     pub fn new(
         display: D,
@@ -34,20 +38,20 @@ where
         }
     }
 
-    pub async fn update(&mut self) -> Result<(), D::PresentError> {
+    pub async fn update(&mut self) -> Result<(), Error<D::PresentError, D::Error>> {
         self.bouncing_ball_core.tick();
 
         // This operation cannot fail
         self.display
             .clear(*self.renderer.get_background_color())
-            .unwrap();
+            .map_err(Error::Draw)?;
 
         // This operation cannot fail
         self.renderer
             .draw(self.bouncing_ball_core.snapshot(), &mut self.display)
-            .unwrap();
+            .map_err(Error::Draw)?;
 
-        self.display.present().await?;
+        self.display.present().await.map_err(Error::Present)?;
         Ok(())
     }
 }
@@ -56,6 +60,7 @@ where
 mod tests {
 
     use super::*;
+    use core::convert::Infallible;
     use embedded_graphics::{
         geometry::{OriginDimensions, Size},
         pixelcolor::BinaryColor,
