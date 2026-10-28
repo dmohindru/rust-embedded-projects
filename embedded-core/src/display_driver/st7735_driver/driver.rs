@@ -149,12 +149,6 @@ where
     pub fn set_pixel_color(&mut self, x: usize, y: usize, color: FB::Color) {
         self.frame_buffer.set_pixel(x, y, color);
     }
-
-    // pub fn test_pixels(&mut self) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
-    //     self.set_pixel_color(5, 5, embedded_graphics::pixelcolor::RgbColor::GREEN);
-
-    //     Ok(())
-    // }
 }
 
 #[cfg(test)]
