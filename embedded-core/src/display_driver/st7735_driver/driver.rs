@@ -88,8 +88,8 @@ where
     }
 
     pub async fn flush(&mut self) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
-        self.write(Command::CASET([0, WIDTH as u16])).await?;
-        self.write(Command::RASET([0, HEIGHT as u16])).await?;
+        self.write(Command::CASET([0, (WIDTH - 1) as u16])).await?;
+        self.write(Command::RASET([0, (HEIGHT - 1) as u16])).await?;
         self.write(Command::RAMWR).await?;
         self.dc.set_high().map_err(|e| Error::Dc(e))?;
         let frame_data = self.frame_buffer.frame_data();
@@ -148,6 +148,36 @@ where
     /// This method is intended to be used from embedded graphics DrawTarget trait
     pub fn set_pixel_color(&mut self, x: usize, y: usize, color: FB::Color) {
         self.frame_buffer.set_pixel(x, y, color);
+    }
+
+    pub fn draw_test_rectangles(&mut self, _x: usize, _y: usize, _width: usize, _height: usize) {
+        todo!()
+    }
+
+    pub fn flush_region(
+        &mut self,
+        _x: usize,
+        _y: usize,
+        _width: usize,
+        _height: usize,
+    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
+        todo!()
+    }
+
+    pub async fn fill_screen(
+        &mut self,
+        color: FB::Color,
+    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>>
+    where
+        FB::Color: Copy,
+    {
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                self.frame_buffer.set_pixel(x, y, color);
+            }
+        }
+
+        self.flush().await
     }
 }
 
