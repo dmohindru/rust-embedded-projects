@@ -4,6 +4,7 @@ members = [
     "projects/led_matrix_projects/*",
     "projects/project01_hc165_game_shield",
     "projects/project02_make_code_input_demo",
+    "projects/project03_make_code_display_demo",
 ]
 resolver = "2"
 
@@ -20,6 +21,7 @@ embassy-executor = { version = "0.7.0", features = [
     "arch-cortex-m",
     "defmt",
     "executor-thread",
+    "task-arena-size-49152",
 ] }
 embassy-nrf = { version = "0.3.1", features = [
     "defmt",
@@ -33,12 +35,14 @@ embassy-time = { version = "0.4.0", features = [
     "defmt",
     "defmt-timestamp-uptime",
 ] }
-embassy-sync = "0.7"
+embassy-sync = "0.6.2"
 embedded-alloc = "0.5"
 embedded-core = { path = "../embedded-core" }
-embassy-embedded-hal = "0.5.0"
+embassy-embedded-hal = "0.3.2"
 static_cell = "2.1.1"
 heapless = "0.8"
 panic-probe = { version = "0.3.2", features = ["print-defmt"] }
+embedded-hal = "0.2.7"
+
 [profile.release]
 debug = 2

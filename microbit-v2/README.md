@@ -65,3 +65,7 @@
 - [01 Hello world](./projects/project00_hello_world/README.md): A simple hello world project.
 - [02 74HC165 Demo](./projects/project01_hc165_game_shield/README.md): Demo program to discover bit mapping for button for elecfreaks retro game console.
 - [02 MakeCodeDInput Demo](./projects/project02_make_code_input_demo/README.md): Demo program to showing usage of MakeCodeInput data structure for elecfreaks retro game console.
+
+# Documentation
+
+https://docs.embassy.dev/embassy-nrf/git/nrf52833/index.html

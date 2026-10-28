@@ -40,3 +40,6 @@ nRF52833 P0.09
 - HW_CFG2 = 0
 - HW_CFG1 = 1 -> ST7735 (CFG1=0x603 or 0x12c2d)
 - HW_CFG0 = 1 -> Not rotated
+
+**Display variant**
+ST7735R

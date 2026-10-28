@@ -1,5 +1,6 @@
-use crate::display_driver::frame_buffer::{PixelFormat, PixelLayout};
+use crate::display_driver::frame_buffer::{FrameBufferInterface, PixelFormat, PixelLayout};
 use core::marker::PhantomData;
+
 pub struct FrameBuffer<const WIDTH: usize, const HEIGHT: usize, const BYTES: usize, L, P>
 where
     L: PixelLayout,
@@ -39,5 +40,34 @@ where
 
     pub fn clear_frame_data(&mut self) {
         self.pixels.fill(0);
+    }
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize, const BYTES: usize, L, P> FrameBufferInterface
+    for FrameBuffer<WIDTH, HEIGHT, BYTES, L, P>
+where
+    L: PixelLayout,
+    P: PixelFormat,
+{
+    type Color = P::Color;
+
+    fn set_pixel(&mut self, x: usize, y: usize, color: Self::Color) {
+        FrameBuffer::set_pixel(self, x, y, color);
+    }
+
+    fn frame_data(&self) -> &[u8] {
+        FrameBuffer::frame_data(self)
+    }
+
+    fn clear_frame_data(&mut self) {
+        FrameBuffer::clear_frame_data(self);
+    }
+
+    fn width(&self) -> usize {
+        WIDTH
+    }
+
+    fn height(&self) -> usize {
+        HEIGHT
     }
 }
