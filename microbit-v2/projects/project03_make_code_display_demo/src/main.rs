@@ -27,9 +27,9 @@ bind_interrupts!(struct Irqs {
 type MySpi = Spim<'static, peripherals::TWISPI0>;
 type SpiBus = Mutex<NoopRawMutex, MySpi>;
 static SPI_BUS: StaticCell<SpiBus> = StaticCell::new();
-const WIDTH: usize = 162;
-const HEIGHT: usize = 132;
-const BYTES: usize = 42768;
+const WIDTH: usize = 160;
+const HEIGHT: usize = 128;
+const BYTES: usize = WIDTH * HEIGHT * 2;
 
 type St7735SpiDevice = SpiDevice<'static, NoopRawMutex, MySpi, NoopOutputPin>;
 type St7735Driver = St7735<
