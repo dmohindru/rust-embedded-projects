@@ -150,8 +150,19 @@ where
         self.frame_buffer.set_pixel(x, y, color);
     }
 
-    pub fn draw_test_rectangles(&mut self, _x: usize, _y: usize, _width: usize, _height: usize) {
-        todo!()
+    pub fn draw_test_rectangles(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        color: FB::Color,
+    ) {
+        for y_index in y..height {
+            for x_index in x..width {
+                self.frame_buffer.set_pixel(x_index, y_index, color);
+            }
+        }
     }
 
     pub fn flush_region(

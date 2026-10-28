@@ -78,24 +78,24 @@ async fn main(_spawner: Spawner) {
     info!("Initialization command sent");
 
     st7735_driver
-        .fill_screen(Rgb565::new(0, 255, 0))
+        .fill_screen(Rgb565::new(0, 0, 0))
         .await
         .unwrap();
 
-    // Set a few pixels
-    // info!("Setting pixels for testing");
-    // for y in 0..HEIGHT {
-    //     for x in 0..WIDTH {
-    //         st7735_driver.set_pixel_color(x, y, Rgb565::new(255, 255, 0));
-    //     }
-    // }
+    // Red Top Left
+    st7735_driver.draw_test_rectangles(0, 0, 20, 20, Rgb565::new(255, 0, 0));
 
-    st7735_driver.set_pixel_color(10, 10, Rgb565::new(255, 0, 0));
-    st7735_driver.set_pixel_color(20, 20, Rgb565::new(255, 0, 0));
-    st7735_driver.set_pixel_color(30, 30, Rgb565::new(255, 0, 0));
-    st7735_driver.set_pixel_color(40, 40, Rgb565::new(255, 0, 0));
+    // Blue Top Green
+    st7735_driver.draw_test_rectangles(108, 0, 20, 20, Rgb565::new(0, 255, 0));
 
-    // // // Send the framebuffer to the display
-    // st7735_driver.flush().await.unwrap();
-    info!("Red frame buffer flushed");
+    // Green Bottom left
+    st7735_driver.draw_test_rectangles(0, 140, 20, 20, Rgb565::new(0, 255, 0));
+
+    // Yellow Bottom right
+    st7735_driver.draw_test_rectangles(108, 140, 20, 20, Rgb565::new(255, 255, 0));
+
+    // Center white
+    st7735_driver.draw_test_rectangles(54, 70, 20, 20, Rgb565::new(0, 0, 0));
+
+    st7735_driver.flush().await.unwrap();
 }
