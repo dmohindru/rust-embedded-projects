@@ -71,31 +71,31 @@ async fn main(_spawner: Spawner) {
 
     let mut st7735_driver: St7735Driver = St7735::new(spi_device, dc, rst, frame_buffer, Delay);
     info!("About to send Initialization commands");
+
     st7735_driver
         .initialize(ColorFormat::SixteenBPP)
         .await
         .unwrap();
     info!("Initialization command sent");
 
-    st7735_driver
-        .fill_screen(Rgb565::new(0, 0, 0))
-        .await
-        .unwrap();
+    // Black Background
+    st7735_driver.fill_screen(Rgb565::new(0, 0, 0));
 
-    // Red Top Left
+    // Red Top Left Square
     st7735_driver.draw_test_rectangles(0, 0, 20, 20, Rgb565::new(255, 0, 0));
 
-    // Blue Top Green
-    st7735_driver.draw_test_rectangles(108, 0, 20, 20, Rgb565::new(0, 255, 0));
+    // Blue Top Right Square
+    st7735_driver.draw_test_rectangles(108, 0, 20, 20, Rgb565::new(0, 0, 255));
 
-    // Green Bottom left
+    // Green Bottom Left Square
     st7735_driver.draw_test_rectangles(0, 140, 20, 20, Rgb565::new(0, 255, 0));
 
-    // Yellow Bottom right
+    // Yellow Bottom Right Square
     st7735_driver.draw_test_rectangles(108, 140, 20, 20, Rgb565::new(255, 255, 0));
 
     // Center white
-    st7735_driver.draw_test_rectangles(54, 70, 20, 20, Rgb565::new(0, 0, 0));
+    st7735_driver.draw_test_rectangles(54, 70, 20, 20, Rgb565::new(255, 255, 255));
 
+    // Flush frame data to display
     st7735_driver.flush().await.unwrap();
 }

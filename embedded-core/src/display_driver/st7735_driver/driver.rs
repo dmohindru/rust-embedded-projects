@@ -102,7 +102,7 @@ where
 
     pub async fn reset(&mut self) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
         self.rst.set_low().map_err(|e| Error::Reset(e))?;
-        self.delay.delay_us(100).await;
+        self.delay.delay_ms(100).await;
         self.rst.set_high().map_err(|e| Error::Reset(e))?;
         Ok(())
     }
@@ -158,8 +158,11 @@ where
         height: usize,
         color: FB::Color,
     ) {
-        for y_index in y..height {
-            for x_index in x..width {
+        let x_end = x.saturating_add(width).min(WIDTH);
+        let y_end = y.saturating_add(height).min(HEIGHT);
+
+        for y_index in y.min(HEIGHT)..y_end {
+            for x_index in x.min(WIDTH)..x_end {
                 self.frame_buffer.set_pixel(x_index, y_index, color);
             }
         }
@@ -175,10 +178,7 @@ where
         todo!()
     }
 
-    pub async fn fill_screen(
-        &mut self,
-        color: FB::Color,
-    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>>
+    pub fn fill_screen(&mut self, color: FB::Color)
     where
         FB::Color: Copy,
     {
@@ -187,8 +187,6 @@ where
                 self.frame_buffer.set_pixel(x, y, color);
             }
         }
-
-        self.flush().await
     }
 }
 
@@ -211,16 +209,15 @@ where
 mod tests {
     use super::*;
     use crate::mocks::FakeDelay;
-
     use embedded_hal_mock::eh1::digital::State::High;
     use embedded_hal_mock::eh1::digital::{
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
 
     use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
-    const WIDTH: usize = 162;
-    const HEIGHT: usize = 132;
-    const BYTES: usize = 42768; // 162 X 132 X 2 = 42768
+    const WIDTH: usize = 128;
+    const HEIGHT: usize = 160;
+    const BYTES: usize = WIDTH * HEIGHT * 2;
     type RGB565FrameBuffer = St7735Rgb565FrameBuffer<WIDTH, HEIGHT, BYTES>;
 
     #[tokio::test]
@@ -338,8 +335,14 @@ mod tests {
         ];
         let frame_buffer = RGB565FrameBuffer::new();
         let mut spi_transactions = Vec::new();
-        concat_spi_transactions(&mut spi_transactions, Command::CASET([0, WIDTH as u16]));
-        concat_spi_transactions(&mut spi_transactions, Command::RASET([0, HEIGHT as u16]));
+        concat_spi_transactions(
+            &mut spi_transactions,
+            Command::CASET([0, (WIDTH - 1) as u16]),
+        );
+        concat_spi_transactions(
+            &mut spi_transactions,
+            Command::RASET([0, (HEIGHT - 1) as u16]),
+        );
         concat_spi_transactions(&mut spi_transactions, Command::RAMWR);
 
         let frame_buffer_data_transactions = vec![
