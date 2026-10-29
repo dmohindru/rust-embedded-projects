@@ -14,14 +14,22 @@ pxt-arcade/libs/hw---n3/config.ts
 
 ### Microbit-v2 pins
 
-Arcade Shield INSR_LATCH
-micro:bit edge connector P9
-nRF52833 P0.09
+Arcade Shield
+
+**Input shift register**
 | Shield Pin | Micro:bit edge pin | nRF52833 pin |
 |------------|--------------------|--------------|
 | INSR_LATCH | P9 | P0.09 |
 | SR_CLK | P20 | P1.00 |
 | INSR0_DATA | P14 | P0.01 |
+
+**Display Screen**
+| Shield Pin | Micro:bit edge pin | nRF52833 pin |
+|------------|--------------------|--------------|
+| LCD_MOSI | P15 | P0.13 |
+| LCD_SCLK | P13 | P0.17 |
+| LCD_DC | P8 | P0.10 |
+| LCD_RST | P16 | P1.02 |
 
 ---
 

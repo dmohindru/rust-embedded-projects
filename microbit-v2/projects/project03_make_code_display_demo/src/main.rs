@@ -27,8 +27,8 @@ bind_interrupts!(struct Irqs {
 type MySpi = Spim<'static, peripherals::TWISPI0>;
 type SpiBus = Mutex<NoopRawMutex, MySpi>;
 static SPI_BUS: StaticCell<SpiBus> = StaticCell::new();
-const WIDTH: usize = 160;
-const HEIGHT: usize = 128;
+const WIDTH: usize = 128;
+const HEIGHT: usize = 160;
 const BYTES: usize = WIDTH * HEIGHT * 2;
 
 type St7735SpiDevice = SpiDevice<'static, NoopRawMutex, MySpi, NoopOutputPin>;
@@ -58,9 +58,7 @@ async fn main(_spawner: Spawner) {
     // LCDRST: P16 - P1.02
 
     let spi = Spim::new_txonly(p.TWISPI0, Irqs, p.P0_17, p.P0_13, config);
-    // Width: 162
-    // Height: 132
-    // Bytes = 162 X 132 X 2 = 42768
+
     let frame_buffer = St7735Rgb565FrameBuffer::<WIDTH, HEIGHT, BYTES>::new();
     let rst = Output::new(p.P1_02, Level::High, OutputDrive::Standard);
     let dc = Output::new(p.P0_10, Level::Low, OutputDrive::Standard);
@@ -73,26 +71,31 @@ async fn main(_spawner: Spawner) {
 
     let mut st7735_driver: St7735Driver = St7735::new(spi_device, dc, rst, frame_buffer, Delay);
     info!("About to send Initialization commands");
+
     st7735_driver
         .initialize(ColorFormat::SixteenBPP)
         .await
         .unwrap();
     info!("Initialization command sent");
 
-    // Set a few pixels
-    info!("Setting pixels for testing");
-    for y in 0..HEIGHT {
-        for x in 0..WIDTH {
-            st7735_driver.set_pixel_color(x, y, Rgb565::new(255, 255, 0));
-        }
-    }
+    // Black Background
+    st7735_driver.fill_screen(Rgb565::new(0, 0, 0));
 
-    st7735_driver.set_pixel_color(40, 40, Rgb565::new(255, 0, 0));
-    st7735_driver.set_pixel_color(41, 40, Rgb565::new(255, 0, 0));
-    st7735_driver.set_pixel_color(40, 41, Rgb565::new(255, 0, 0));
-    st7735_driver.set_pixel_color(41, 41, Rgb565::new(255, 0, 0));
+    // Red Top Left Square
+    st7735_driver.draw_test_rectangles(0, 0, 20, 20, Rgb565::new(255, 0, 0));
 
-    // // Send the framebuffer to the display
+    // Blue Top Right Square
+    st7735_driver.draw_test_rectangles(108, 0, 20, 20, Rgb565::new(0, 0, 255));
+
+    // Green Bottom Left Square
+    st7735_driver.draw_test_rectangles(0, 140, 20, 20, Rgb565::new(0, 255, 0));
+
+    // Yellow Bottom Right Square
+    st7735_driver.draw_test_rectangles(108, 140, 20, 20, Rgb565::new(255, 255, 0));
+
+    // Center white
+    st7735_driver.draw_test_rectangles(54, 70, 20, 20, Rgb565::new(255, 255, 255));
+
+    // Flush frame data to display
     st7735_driver.flush().await.unwrap();
-    info!("Red frame buffer flushed");
 }
