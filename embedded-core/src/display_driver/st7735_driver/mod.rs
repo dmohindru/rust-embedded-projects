@@ -1,5 +1,5 @@
 mod command;
-mod driver;
+pub mod v1;
+pub mod v2;
 
 pub use command::ColorFormat;
-pub use driver::{St7735, St7735Rgb565FrameBuffer};
