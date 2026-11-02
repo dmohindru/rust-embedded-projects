@@ -1,6 +1,6 @@
 use crate::display_driver::Encode;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum ColorFormat {
     TwelveBPP,
     SixteenBPP,
