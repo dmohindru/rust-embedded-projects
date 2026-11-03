@@ -11,5 +11,5 @@ pub enum Error<SpiError, DcError, RstError> {
     Dc(DcError),
     Reset(RstError),
     Coordinates(String<64>),
-    DataBuffer(String<32>),
+    DataBuffer(String<64>),
 }

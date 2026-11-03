@@ -2,7 +2,7 @@ use crate::display_driver::{
     st7735_driver::{command::Command, ColorFormat, Error},
     Encode,
 };
-use core::fmt::Write;
+use core::{fmt::Write, str::FromStr};
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::{delay::DelayNs, spi::SpiDevice};
 use heapless::String;
@@ -102,6 +102,8 @@ where
         height: usize,
         data: &[u8],
     ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
+        Self::validate_coordinates(x, y)?;
+        Self::validate_dimensions(width, height)?;
         todo!()
     }
 
@@ -113,6 +115,8 @@ where
         height: usize,
         data: &[u8],
     ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
+        Self::validate_coordinates(x, y)?;
+        Self::validate_dimensions(width, height)?;
         todo!()
     }
 
@@ -177,6 +181,47 @@ where
         self.device.write(args).await.map_err(|e| Error::Spi(e))?;
 
         Ok(())
+    }
+
+    fn validate_coordinates(
+        x: u16,
+        y: u16,
+    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
+        if x >= WIDTH as u16 {
+            let error_msg = Self::get_error_message("Invalid x coordinates");
+            return Err(Error::Coordinates(error_msg));
+        }
+
+        if y >= WIDTH as u16 {
+            let error_msg = Self::get_error_message("Invalid y coordinates");
+            return Err(Error::Coordinates(error_msg));
+        }
+
+        Ok(())
+    }
+
+    fn validate_dimensions(
+        width: usize,
+        height: usize,
+    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
+        if width > WIDTH {
+            let error_msg = Self::get_error_message("Invalid width dimensions");
+            return Err(Error::Coordinates(error_msg));
+        }
+
+        if height > HEIGHT {
+            let error_msg = Self::get_error_message("Invalid height dimensions");
+            return Err(Error::Coordinates(error_msg));
+        }
+
+        Ok(())
+    }
+
+    fn get_error_message(message: &str) -> String<64> {
+        match String::<64>::from_str(message) {
+            Ok(err_msg) => err_msg,
+            Err(_) => String::<64>::from_str("Some error occurred").unwrap(),
+        }
     }
 }
 
@@ -341,14 +386,8 @@ mod tests {
 
         match x_coordinate_error {
             Error::Coordinates(message) => {
-                let mut expected_error_msg: String<64> = String::new();
-                write!(
-                    expected_error_msg,
-                    "x coordinates {} greater than allowed width",
-                    WIDTH
-                )
-                .unwrap();
-
+                let expected_error_msg: String<64> =
+                    String::from_str("Invalid x coordinates").unwrap();
                 assert_eq!(message, expected_error_msg);
             }
             _ => {
@@ -363,13 +402,8 @@ mod tests {
 
         match y_coordinate_error {
             Error::Coordinates(message) => {
-                let mut expected_error_msg: String<64> = String::new();
-                write!(
-                    expected_error_msg,
-                    "y coordinates {} greater than allowed height",
-                    HEIGHT
-                )
-                .unwrap();
+                let expected_error_msg: String<64> =
+                    String::from_str("Invalid y coordinates").unwrap();
 
                 assert_eq!(message, expected_error_msg);
             }
