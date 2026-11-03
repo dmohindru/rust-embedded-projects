@@ -2,7 +2,7 @@ use crate::display_driver::{
     st7735_driver::{command::Command, ColorFormat, Error},
     Encode,
 };
-use core::{fmt::Write, str::FromStr};
+use core::str::FromStr;
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::{delay::DelayNs, spi::SpiDevice};
 use heapless::String;
@@ -104,6 +104,20 @@ where
     ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
         Self::validate_coordinates(x, y)?;
         Self::validate_dimensions(width, height)?;
+        // TODO other color format 18 BPP and 12 BPP to be handled later
+        if self.color_format == ColorFormat::EighteenBPP
+            || self.color_format == ColorFormat::TwelveBPP
+        {
+            todo!()
+        }
+        let sixteen_bpp_bytes = 2;
+        let stride = width * sixteen_bpp_bytes;
+
+        if data.len() < height * stride {
+            return Err(Error::DataBuffer(Self::get_error_message(
+                "Invalid data buffer size",
+            )));
+        }
         todo!()
     }
 
@@ -117,6 +131,20 @@ where
     ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
         Self::validate_coordinates(x, y)?;
         Self::validate_dimensions(width, height)?;
+        if self.color_format == ColorFormat::EighteenBPP
+            || self.color_format == ColorFormat::TwelveBPP
+        {
+            todo!()
+        }
+        let sixteen_bpp_bytes = 2;
+        let stride = WIDTH * sixteen_bpp_bytes;
+
+        if data.len() < HEIGHT * stride {
+            return Err(Error::DataBuffer(Self::get_error_message(
+                "Invalid data buffer size",
+            )));
+        }
+
         todo!()
     }
 
@@ -416,24 +444,122 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_when_rectangle_update_op_width_is_not_within_allowed_range() {
-        todo!()
+        let rst_pin_transactions: [PinTransaction; 0] = [];
+        let dc_pin_transactions: [PinTransaction; 0] = [];
+        let spi_transactions: Vec<SpiTransaction<u8>> = Vec::new();
+        let mut device = get_st7735_device(
+            &rst_pin_transactions,
+            &dc_pin_transactions,
+            &spi_transactions,
+        );
+
+        let width_error = device
+            .update_rect(0, 0, WIDTH + 1, 10, &[])
+            .await
+            .unwrap_err();
+
+        match width_error {
+            Error::Coordinates(message) => {
+                let expected_error_msg: String<64> =
+                    String::from_str("Invalid width dimensions").unwrap();
+                assert_eq!(message, expected_error_msg);
+            }
+            _ => {
+                panic!("Unknown error");
+            }
+        }
+        free_st7735_device(device);
     }
 
     #[tokio::test]
     async fn should_return_error_when_rectangle_update_op_height_is_not_within_allowed_range() {
-        todo!()
+        let rst_pin_transactions: [PinTransaction; 0] = [];
+        let dc_pin_transactions: [PinTransaction; 0] = [];
+        let spi_transactions: Vec<SpiTransaction<u8>> = Vec::new();
+        let mut device = get_st7735_device(
+            &rst_pin_transactions,
+            &dc_pin_transactions,
+            &spi_transactions,
+        );
+
+        let width_error = device
+            .update_rect(0, 0, WIDTH, HEIGHT + 1, &[])
+            .await
+            .unwrap_err();
+
+        match width_error {
+            Error::Coordinates(message) => {
+                let expected_error_msg: String<64> =
+                    String::from_str("Invalid height dimensions").unwrap();
+                assert_eq!(message, expected_error_msg);
+            }
+            _ => {
+                panic!("Unknown error");
+            }
+        }
+        free_st7735_device(device);
     }
 
     #[tokio::test]
     async fn should_return_error_when_supplied_data_slice_is_of_not_right_size_during_update_rect_ops(
     ) {
-        todo!()
+        let rst_pin_transactions: [PinTransaction; 0] = [];
+        let dc_pin_transactions: [PinTransaction; 0] = [];
+        let spi_transactions: Vec<SpiTransaction<u8>> = Vec::new();
+        let mut device = get_st7735_device(
+            &rst_pin_transactions,
+            &dc_pin_transactions,
+            &spi_transactions,
+        );
+
+        let frame_data: [u8; 90] = [0xFF; 90];
+        let frame_data_error = device
+            .update_rect(0, 0, 10, 10, &frame_data)
+            .await
+            .unwrap_err();
+
+        match frame_data_error {
+            Error::DataBuffer(message) => {
+                let expected_error_msg: String<64> =
+                    String::from_str("Invalid data buffer size").unwrap();
+                assert_eq!(message, expected_error_msg);
+            }
+            _ => {
+                panic!("Unknown error");
+            }
+        }
+        free_st7735_device(device);
     }
 
     #[tokio::test]
     async fn should_return_error_when_supplied_data_slice_is_of_not_right_size_during_update_rect_stride_ops(
     ) {
-        todo!()
+        let rst_pin_transactions: [PinTransaction; 0] = [];
+        let dc_pin_transactions: [PinTransaction; 0] = [];
+        let spi_transactions: Vec<SpiTransaction<u8>> = Vec::new();
+        let mut device = get_st7735_device(
+            &rst_pin_transactions,
+            &dc_pin_transactions,
+            &spi_transactions,
+        );
+
+        let frame_data: [u8; 40950] = [0xFF; 40950];
+        let frame_data_error = device
+            .update_rect_stride(0, 0, 10, 10, &frame_data)
+            .await
+            .unwrap_err();
+
+        match frame_data_error {
+            Error::DataBuffer(message) => {
+                let expected_error_msg: String<64> =
+                    String::from_str("Invalid data buffer size").unwrap();
+                assert_eq!(message, expected_error_msg);
+            }
+            _ => {
+                panic!("Unknown error");
+            }
+        }
+        free_st7735_device(device);
     }
 
     #[tokio::test]
