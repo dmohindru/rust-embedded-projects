@@ -85,14 +85,14 @@ where
         Ok(())
     }
 
-    // Validation	Requirement
-    // Width	Greater than zero
-    // Height	Greater than zero
-    // Coordinates	Rectangle must fit within display dimensions
-    // Pixel data	Exactly width × height × 2 bytes for tightly packed data
-    // Stride	At least width × 2 bytes
-    // Strided data	At least (height - 1) × stride + width × 2 bytes
-    // Stride = Width X BytesPerPixel
+    /// Validation	Requirement
+    /// Width	Greater than zero
+    /// Height	Greater than zero
+    /// Coordinates	Rectangle must fit within display dimensions
+    /// Pixel data	Exactly width × height × 2 bytes for tightly packed data
+    /// Stride	At least width × 2 bytes
+    /// Strided data	At least (height - 1) × stride + width × 2 bytes
+    /// Stride = Width X BytesPerPixel
 
     pub async fn update_rect(
         &mut self,
@@ -118,59 +118,15 @@ where
                 "Invalid data buffer size",
             )));
         }
-        todo!()
-    }
 
-    pub async fn update_rect_stride(
-        &mut self,
-        x: u16,
-        y: u16,
-        width: usize,
-        height: usize,
-        data: &[u8],
-    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
-        Self::validate_coordinates(x, y)?;
-        Self::validate_dimensions(width, height)?;
-        if self.color_format == ColorFormat::EighteenBPP
-            || self.color_format == ColorFormat::TwelveBPP
-        {
-            todo!()
-        }
-        let sixteen_bpp_bytes = 2;
-        let stride = WIDTH * sixteen_bpp_bytes;
-
-        if data.len() < HEIGHT * stride {
-            return Err(Error::DataBuffer(Self::get_error_message(
-                "Invalid data buffer size",
-            )));
-        }
-
-        todo!()
-    }
-
-    async fn set_address_window(
-        &mut self,
-        x: u16,
-        y: u16,
-        width: usize,
-        height: usize,
-    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
-        // Validate region and data length
-        // Configure address window
-        // Issue RAMWR
-        // Transfer pixel data
-        todo!()
-    }
-
-    async fn write_pixel_data(
-        &mut self,
-        data: &[u8],
-    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
-        // Validate region, stride and data length
-        // Configure address window
-        // Issue RAMWR
-        // Transfer each row, respecting stride
-        todo!()
+        let x_end = x.saturating_add(width as u16 - 1).min((WIDTH - 1) as u16);
+        // let y_end = y + height as u16 - 1;
+        let y_end = y.saturating_add(height as u16 - 1).min((HEIGHT - 1) as u16);
+        self.write(Command::CASET([x, x_end])).await?;
+        self.write(Command::RASET([y, y_end])).await?;
+        self.write(Command::RAMWR).await?;
+        self.write_data(data).await?;
+        Ok(())
     }
 
     pub async fn write(
@@ -532,46 +488,48 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_return_error_when_supplied_data_slice_is_of_not_right_size_during_update_rect_stride_ops(
-    ) {
+    async fn should_flush_frame_data_with_proper_commands_and_pin_transactions_for_update_rect_ops()
+    {
+        let width = 20;
+        let height = 20;
+        let x: u16 = 10;
+        let y: u16 = 20;
+
+        let frame_data: [u8; 800] = [0xFF; 800];
         let rst_pin_transactions: [PinTransaction; 0] = [];
-        let dc_pin_transactions: [PinTransaction; 0] = [];
-        let spi_transactions: Vec<SpiTransaction<u8>> = Vec::new();
+        let dc_pin_transactions = [
+            // CASET
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // RASET
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+            // RAMWR
+            PinTransaction::set(PinState::Low),
+            // Frame buffer data
+            PinTransaction::set(PinState::High),
+        ];
+        let mut spi_transactions = Vec::new();
+        concat_spi_transactions(&mut spi_transactions, Command::CASET([10, 29]));
+        concat_spi_transactions(&mut spi_transactions, Command::RASET([20, 39]));
+        concat_spi_transactions(&mut spi_transactions, Command::RAMWR);
+        let frame_buffer_data_transactions = vec![
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write_vec(frame_data.to_vec()),
+            SpiTransaction::transaction_end(),
+        ];
+        spi_transactions.extend(frame_buffer_data_transactions);
         let mut device = get_st7735_device(
             &rst_pin_transactions,
             &dc_pin_transactions,
             &spi_transactions,
         );
-
-        let frame_data: [u8; 40950] = [0xFF; 40950];
-        let frame_data_error = device
-            .update_rect_stride(0, 0, 10, 10, &frame_data)
+        device
+            .update_rect(x, y, width, height, &frame_data)
             .await
-            .unwrap_err();
+            .unwrap();
 
-        match frame_data_error {
-            Error::DataBuffer(message) => {
-                let expected_error_msg: String<64> =
-                    String::from_str("Invalid data buffer size").unwrap();
-                assert_eq!(message, expected_error_msg);
-            }
-            _ => {
-                panic!("Unknown error");
-            }
-        }
         free_st7735_device(device);
-    }
-
-    #[tokio::test]
-    async fn should_flush_frame_data_with_proper_commands_and_pin_transactions_for_update_rect_ops()
-    {
-        todo!()
-    }
-
-    #[tokio::test]
-    async fn should_flush_frame_data_with_proper_commands_and_pin_transactions_for_update_rect_stride_ops(
-    ) {
-        todo!()
     }
 
     fn expected_initialization_command_spi_transactions() -> Vec<SpiTransaction<u8>> {
