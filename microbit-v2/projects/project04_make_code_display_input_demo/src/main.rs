@@ -10,16 +10,20 @@ use embassy_nrf::{
     peripherals,
     spim::{self, Spim},
 };
-use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
-use embassy_time::Delay;
-use embedded_core::{
-    display_driver::st7735_driver::{v2::St7735, ColorFormat},
-    input_device::make_code_input::MakeCodeInput,
-    shift_register::Hc165,
+use embassy_sync::{
+    blocking_mutex::raw::{NoopRawMutex, ThreadModeRawMutex},
+    channel::{Channel, Receiver, Sender},
+    mutex::Mutex,
 };
-use embedded_graphics::pixelcolor::{IntoStorage, Rgb565, RgbColor};
-
-use embedded_core::output::NoopOutputPin;
+use embassy_time::{Delay, Timer};
+use embedded_core::{
+    cursor::StepCursorCircular,
+    display_driver::st7735_driver::v2::St7735,
+    frame::Direction,
+    input_device::make_code_input::MakeCodeInput,
+    output::NoopOutputPin,
+    shift_register::{Hc165, SerialInput},
+};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -30,8 +34,11 @@ bind_interrupts!(struct Irqs {
 
 type MySpi = Spim<'static, peripherals::TWISPI0>;
 type SpiBus = Mutex<NoopRawMutex, MySpi>;
-static SPI_BUS: StaticCell<SpiBus> = StaticCell::new();
+type St7735SpiDevice = SpiDevice<'static, NoopRawMutex, MySpi, NoopOutputPin>;
+type St7735Driver = St7735<St7735SpiDevice, Output<'static>, Output<'static>, Delay, WIDTH, HEIGHT>;
 
+static SPI_BUS: StaticCell<SpiBus> = StaticCell::new();
+static CHANNEL: Channel<ThreadModeRawMutex, Direction, 1> = Channel::new();
 // Color codes
 const RED_COLOR: u16 = 0xF800;
 const GREEN_COLOR: u16 = 0x07E0;
@@ -55,9 +62,6 @@ static BLACK_FRAME_BUFFER: [u8; RECT_FRAME_BUFFER_SIZE] = create_rect_frame(YELL
 
 static SCREEN_BACKGROUND_BUFFER: [u8; SCREEN_FRAME_BUFFER_SIZE] = create_rect_frame(BLACK_COLOR);
 
-type St7735SpiDevice = SpiDevice<'static, NoopRawMutex, MySpi, NoopOutputPin>;
-type St7735Driver = St7735<St7735SpiDevice, Output<'static>, Output<'static>, Delay, WIDTH, HEIGHT>;
-
 const fn create_rect_frame<const SIZE: usize>(color: u16) -> [u8; SIZE] {
     let mut buffer = [0u8; SIZE];
     let high_byte = (color >> 8) as u8;
@@ -71,11 +75,53 @@ const fn create_rect_frame<const SIZE: usize>(color: u16) -> [u8; SIZE] {
     buffer
 }
 
+#[embassy_executor::task]
+async fn input_scanner(
+    mut make_code_input: MakeCodeInput<Hc165<Input<'static>, Output<'static>, Delay>>,
+    sender: Sender<'static, ThreadModeRawMutex, Direction, 1>,
+) {
+    loop {
+        let report = make_code_input.read_input_report().await.unwrap();
+        if report.a_btn_pressed {
+            sender.send(Direction::Left).await;
+        }
+        if report.b_btn_pressed {
+            sender.send(Direction::Right).await;
+        }
+        Timer::after_millis(100).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn frame_updater(
+    mut st7735_driver: St7735Driver,
+    receiver: Receiver<'static, ThreadModeRawMutex, Direction, 1>,
+) {
+    let mut circular_cursor = StepCursorCircular::new(3, 0, 1, 4);
+    let coordinates: [(u16, u16, &[u8; 800]); 4] = [
+        // TOP LEFT - Red Color
+        (0, 0, &RED_FRAME_BUFFER),
+        // TOP RIGHT - Green Color
+        (108, 0, &GREEN_FRAME_BUFFER),
+        // BOTTOM LEFT - Blue Color
+        (0, 140, &BLUE_FRAME_BUFFER),
+        // BOTTOM RIGHT - Yellow Color
+        (108, 140, &YELLOW_FRAME_BUFFER),
+    ];
+    loop {
+        let button_pressed = receiver.receive().await;
+        let previous_index = circular_cursor.current_value() as usize;
+        circular_cursor.move_step(button_pressed);
+        let new_index = circular_cursor.current_value() as usize;
+        let current_coordinates = coordinates[new_index];
+    }
+}
+
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(Default::default());
 
-    // Configure SPI and ST7735 display.
+    // ***Configure SPI and ST7735 display.***
     let mut config = spim::Config::default();
     config.frequency = spim::Frequency::M1;
     config.mode = embedded_hal::spi::MODE_0;
@@ -99,15 +145,36 @@ async fn main(_spawner: Spawner) {
     let mut st7735_driver: St7735Driver = St7735::new(spi_device, dc, rst, Delay);
     info!("About to send Initialization commands");
 
-    // Configure Input device
+    // ***Configure Input device ***
     let shift_load = Output::new(p.P0_09, Level::High, OutputDrive::Standard);
     let clk = Output::new(p.P1_00, Level::High, OutputDrive::Standard);
     let data_in = Input::new(p.P0_01, Pull::Down);
     let hc165_device = Hc165::new(shift_load, clk, data_in, Delay, 4).unwrap();
-    let mut make_code_input = MakeCodeInput::new(hc165_device);
+    let make_code_input = MakeCodeInput::new(hc165_device);
+
+    // *** Sender & Receiver ***
+    let input_btn_sender = CHANNEL.sender();
+    let frame_updater_receiver = CHANNEL.receiver();
 
     st7735_driver.initialize().await.unwrap();
     info!("Initialization command sent");
+    st7735_driver
+        .update_rect(0, 0, WIDTH, HEIGHT, &SCREEN_BACKGROUND_BUFFER)
+        .await
+        .unwrap();
+
+    st7735_driver
+        .update_rect(0, 0, RECT_WIDTH, RECT_HEIGHT, &RED_FRAME_BUFFER)
+        .await
+        .unwrap();
+
+    spawner
+        .spawn(input_scanner(make_code_input, input_btn_sender))
+        .expect("Failed to spawn input scanner task");
+
+    spawner
+        .spawn(frame_updater(st7735_driver, frame_updater_receiver))
+        .expect("Failed to spawn frame updater task");
 
     // Black Background
     // st7735_driver.fill_screen(Rgb565::new(0, 0, 0));
