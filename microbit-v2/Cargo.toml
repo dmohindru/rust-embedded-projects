@@ -5,6 +5,7 @@ members = [
     "projects/project01_hc165_game_shield",
     "projects/project02_make_code_input_demo",
     "projects/project03_make_code_display_demo",
+    "projects/project04_make_code_display_input_demo",
 ]
 resolver = "2"
 
