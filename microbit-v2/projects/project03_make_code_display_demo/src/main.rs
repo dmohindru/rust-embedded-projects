@@ -12,7 +12,10 @@ use embassy_nrf::{
 };
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
 use embassy_time::Delay;
-use embedded_core::display_driver::{ColorFormat, St7735, St7735Rgb565FrameBuffer};
+use embedded_core::display_driver::st7735_driver::{
+    v1::{St7735, St7735Rgb565FrameBuffer},
+    ColorFormat,
+};
 use embedded_graphics::pixelcolor::Rgb565;
 
 use embedded_core::output::NoopOutputPin;

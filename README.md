@@ -34,7 +34,7 @@ cargo embed               # flash micro:bit
 
 ```sh
 ffmpeg -i demo.mp4 -vf \
-"fps=5,scale=160:-1:flags=lanczos,split[s0][s1];\
+"fps=5,scale=200:-1:flags=lanczos,split[s0][s1];\
  [s0]palettegen=max_colors=32[p];\
  [s1][p]paletteuse=dither=none" \
 -loop 0 demo.gif

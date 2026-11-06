@@ -1,18 +1,14 @@
 use crate::display_driver::frame_buffer::{
     FrameBuffer, FrameBufferInterface, Rgb565PixelFormat, Rgb565PixelLayout,
 };
-use crate::display_driver::st7735_driver::command::{ColorFormat, Command};
+use crate::display_driver::st7735_driver::{
+    command::{ColorFormat, Command},
+    Error,
+};
 use crate::display_driver::Encode;
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::delay::DelayNs;
 use embedded_hal_async::spi::SpiDevice;
-
-#[derive(Debug)]
-pub enum Error<SpiError, DcError, RstError> {
-    Spi(SpiError),
-    Dc(DcError),
-    Reset(RstError),
-}
 
 pub type St7735Rgb565FrameBuffer<const WIDTH: usize, const HEIGHT: usize, const BYTES: usize> =
     FrameBuffer<WIDTH, HEIGHT, BYTES, Rgb565PixelLayout, Rgb565PixelFormat>;
