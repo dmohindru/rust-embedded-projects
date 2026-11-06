@@ -17,12 +17,8 @@ use embassy_sync::{
 };
 use embassy_time::{Delay, Timer};
 use embedded_core::{
-    cursor::StepCursorCircular,
-    display_driver::st7735_driver::v2::St7735,
-    frame::Direction,
-    input_device::make_code_input::MakeCodeInput,
-    output::NoopOutputPin,
-    shift_register::{Hc165, SerialInput},
+    cursor::StepCursorCircular, display_driver::st7735_driver::v2::St7735, frame::Direction,
+    input_device::make_code_input::MakeCodeInput, output::NoopOutputPin, shift_register::Hc165,
 };
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
@@ -58,7 +54,7 @@ static RED_FRAME_BUFFER: [u8; RECT_FRAME_BUFFER_SIZE] = create_rect_frame(RED_CO
 static GREEN_FRAME_BUFFER: [u8; RECT_FRAME_BUFFER_SIZE] = create_rect_frame(GREEN_COLOR);
 static BLUE_FRAME_BUFFER: [u8; RECT_FRAME_BUFFER_SIZE] = create_rect_frame(BLUE_COLOR);
 static YELLOW_FRAME_BUFFER: [u8; RECT_FRAME_BUFFER_SIZE] = create_rect_frame(YELLOW_COLOR);
-static BLACK_FRAME_BUFFER: [u8; RECT_FRAME_BUFFER_SIZE] = create_rect_frame(YELLOW_COLOR);
+static BLACK_FRAME_BUFFER: [u8; RECT_FRAME_BUFFER_SIZE] = create_rect_frame(BLACK_COLOR);
 
 static SCREEN_BACKGROUND_BUFFER: [u8; SCREEN_FRAME_BUFFER_SIZE] = create_rect_frame(BLACK_COLOR);
 
@@ -88,7 +84,7 @@ async fn input_scanner(
         if report.b_btn_pressed {
             sender.send(Direction::Right).await;
         }
-        Timer::after_millis(100).await;
+        Timer::after_millis(150).await;
     }
 }
 
@@ -102,18 +98,27 @@ async fn frame_updater(
         // TOP LEFT - Red Color
         (0, 0, &RED_FRAME_BUFFER),
         // TOP RIGHT - Green Color
-        (108, 0, &GREEN_FRAME_BUFFER),
-        // BOTTOM LEFT - Blue Color
-        (0, 140, &BLUE_FRAME_BUFFER),
-        // BOTTOM RIGHT - Yellow Color
-        (108, 140, &YELLOW_FRAME_BUFFER),
+        (107, 0, &GREEN_FRAME_BUFFER),
+        // BOTTOM RIGHT - Blue Color
+        (107, 139, &BLUE_FRAME_BUFFER),
+        // BOTTOM LEFT - Yellow Color
+        (0, 139, &YELLOW_FRAME_BUFFER),
     ];
     loop {
         let button_pressed = receiver.receive().await;
         let previous_index = circular_cursor.current_value() as usize;
+        let (prev_x, prev_y, _) = coordinates[previous_index];
+        st7735_driver
+            .update_rect(prev_x, prev_y, RECT_WIDTH, RECT_WIDTH, &BLACK_FRAME_BUFFER)
+            .await
+            .unwrap();
         circular_cursor.move_step(button_pressed);
         let new_index = circular_cursor.current_value() as usize;
-        let current_coordinates = coordinates[new_index];
+        let (new_x, new_y, buffer) = coordinates[new_index];
+        st7735_driver
+            .update_rect(new_x, new_y, RECT_WIDTH, RECT_HEIGHT, buffer)
+            .await
+            .unwrap();
     }
 }
 
@@ -175,25 +180,4 @@ async fn main(spawner: Spawner) {
     spawner
         .spawn(frame_updater(st7735_driver, frame_updater_receiver))
         .expect("Failed to spawn frame updater task");
-
-    // Black Background
-    // st7735_driver.fill_screen(Rgb565::new(0, 0, 0));
-
-    // // Red Top Left Square
-    // st7735_driver.draw_test_rectangles(0, 0, 20, 20, Rgb565::new(255, 0, 0));
-
-    // // Blue Top Right Square
-    // st7735_driver.draw_test_rectangles(108, 0, 20, 20, Rgb565::new(0, 0, 255));
-
-    // // Green Bottom Left Square
-    // st7735_driver.draw_test_rectangles(0, 140, 20, 20, Rgb565::new(0, 255, 0));
-
-    // // Yellow Bottom Right Square
-    // st7735_driver.draw_test_rectangles(108, 140, 20, 20, Rgb565::new(255, 255, 0));
-
-    // // Center white
-    // st7735_driver.draw_test_rectangles(54, 70, 20, 20, Rgb565::new(255, 255, 255));
-
-    // // Flush frame data to display
-    // st7735_driver.flush().await.unwrap();
 }

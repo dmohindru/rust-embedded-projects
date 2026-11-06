@@ -7,6 +7,8 @@ use embedded_hal::digital::OutputPin;
 use embedded_hal_async::{delay::DelayNs, spi::SpiDevice};
 use heapless::String;
 
+const SPI_WRITE_CHUNK_SIZE: usize = 512;
+
 pub struct St7735<SPI, DC, RST, D, const WIDTH: usize, const HEIGHT: usize>
 where
     SPI: SpiDevice,
@@ -162,7 +164,11 @@ where
         args: &[u8],
     ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
         self.dc.set_high().map_err(|e| Error::Dc(e))?;
-        self.device.write(args).await.map_err(|e| Error::Spi(e))?;
+        // self.device.write(args).await.map_err(|e| Error::Spi(e))?;
+
+        for chunk in args.chunks(SPI_WRITE_CHUNK_SIZE) {
+            self.device.write(chunk).await.map_err(|e| Error::Spi(e))?;
+        }
 
         Ok(())
     }
@@ -176,7 +182,7 @@ where
             return Err(Error::Coordinates(error_msg));
         }
 
-        if y >= WIDTH as u16 {
+        if y >= HEIGHT as u16 {
             let error_msg = Self::get_error_message("Invalid y coordinates");
             return Err(Error::Coordinates(error_msg));
         }
@@ -513,12 +519,15 @@ mod tests {
         concat_spi_transactions(&mut spi_transactions, Command::CASET([10, 29]));
         concat_spi_transactions(&mut spi_transactions, Command::RASET([20, 39]));
         concat_spi_transactions(&mut spi_transactions, Command::RAMWR);
-        let frame_buffer_data_transactions = vec![
-            SpiTransaction::transaction_start(),
-            SpiTransaction::write_vec(frame_data.to_vec()),
-            SpiTransaction::transaction_end(),
-        ];
-        spi_transactions.extend(frame_buffer_data_transactions);
+        for chunk in frame_data.chunks(SPI_WRITE_CHUNK_SIZE) {
+            let frame_buffer_data_transactions = vec![
+                SpiTransaction::transaction_start(),
+                SpiTransaction::write_vec(chunk.to_vec()),
+                SpiTransaction::transaction_end(),
+            ];
+            spi_transactions.extend(frame_buffer_data_transactions);
+        }
+
         let mut device = get_st7735_device(
             &rst_pin_transactions,
             &dc_pin_transactions,
