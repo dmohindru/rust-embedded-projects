@@ -1,0 +1,37 @@
+[workspace]
+resolver = "3"
+members = ["projects/project00_hello_world"]
+
+[workspace.dependencies]
+# defmt
+defmt = "1"
+esp-println = { version = "0.16.1", features = ["esp32s3", "defmt-espflash"] }
+esp-backtrace = { version = "0.18.1", features = [
+    "panic-handler",
+    "defmt",
+    "esp32s3",
+] }
+
+# embassy
+embassy-executor = "0.10.0"
+embassy-time = "0.5.0"
+embassy-sync = "0.8.0"
+
+# esp
+esp-hal = { version = "1.1.0", features = ["esp32s3", "defmt", "unstable"] }
+esp-rtos = { version = "0.3.0", features = ["embassy", "defmt", "esp32s3"] }
+esp-bootloader-esp-idf = { version = "0.5.0", features = ["esp32s3"] }
+esp-alloc = "0.10.0"
+
+# Driver library (common utils)
+embedded-core = { path = "../../embedded-core" }
+
+
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1 # LLVM can perform better optimizations using a single thread
+debug = 2         # prefer slower builds but better debugging experience
+lto = 'fat'
+opt-level = 's'
