@@ -40,3 +40,7 @@ espflash board-info
 
 - Basically hold the boot button
 - Then restart the board
+
+# Documentation
+
+- **[01Studio pyController](https://github.com/01studio-lab/pyController)**

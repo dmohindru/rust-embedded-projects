@@ -15,8 +15,3 @@ https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system
 - how is panic handler different in defmt and rtt
 - how is defmt different for different architecture
 - how is probe-rs linked to it
-
-espflash flash \
- target/riscv32imac-unknown-none-elf/release/project00_hello_world \
- --monitor \
- --log-format defmt

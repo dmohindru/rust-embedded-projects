@@ -1,0 +1,1 @@
+https://www.atomic14.com/esp32/modules/esp32-s3-wroom-1/
